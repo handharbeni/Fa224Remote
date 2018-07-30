@@ -1,14 +1,13 @@
 package com.litron.litronremote;
 
-import android.Manifest;
-import android.app.ActivityOptions;
 import android.app.AlertDialog;
-import android.app.TimePickerDialog;
+import android.app.DialogFragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,14 +18,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatButton;
 import android.util.Log;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.aigestudio.wheelpicker.WheelPicker;
 import com.suke.widget.SwitchButton;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -46,30 +46,29 @@ public class MainActivity extends AppCompatActivity {
     private static String LabelPutarLayar = "PUTAR_LAYAR";
 
 
-//    @BindView(R.id.etWaktuOn)
-//    EditText etWaktuOn;
-//    @BindView(R.id.etWaktuOff)
-//    EditText etWaktuOff;
     @BindView(R.id.btnKirim)
     AppCompatButton btnKirim;
 
     @BindView(R.id.JamOn)
-    Spinner JamOn;
+    WheelPicker JamOn;
 
     @BindView(R.id.JamOff)
-    Spinner JamOff;
+    WheelPicker JamOff;
 
     @BindView(R.id.MenitOn)
-    Spinner MenitOn;
+    WheelPicker MenitOn;
 
     @BindView(R.id.MenitOff)
-    Spinner MenitOff;
+    WheelPicker MenitOff;
 
     @BindView(R.id.txtBantuan)
     TextView txtBantuan;
 
     @BindView(R.id.choose_ir)
     SwitchButton choose_ir;
+
+    @BindView(R.id.testSound)
+    AppCompatButton testSound;
 
 
 
@@ -121,6 +120,14 @@ public class MainActivity extends AppCompatActivity {
         return sharedPreferences.getInt(LabelPutarLayar, 0);
     }
 
+    private List<String> getListJam(){
+        return Arrays.asList(getResources().getStringArray(R.array.jam));
+    }
+
+    private List<String> getListMenit(){
+        return Arrays.asList(getResources().getStringArray(R.array.menit));
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,27 +144,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initDataShared(){
-        ArrayAdapter<CharSequence> jamOn = ArrayAdapter.createFromResource(this, R.array.jam, android.R.layout.simple_spinner_item);
-        jamOn.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        JamOn.setData(getListJam());
+        JamOn.setSelectedItemPosition(getListJam().indexOf(getsWaktuOn().split(":")[0].length()==1?"0"+getsWaktuOn().split(":")[0]:getsWaktuOn().split(":")[0]));
 
-        ArrayAdapter<CharSequence> jamOff = ArrayAdapter.createFromResource(this, R.array.jam, android.R.layout.simple_spinner_item);
-        jamOff.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        MenitOn.setData(getListMenit());
+        MenitOn.setSelectedItemPosition(getListMenit().indexOf(getsWaktuOn().split(":")[1].length()==1?"0"+getsWaktuOn().split(":")[1]:getsWaktuOn().split(":")[1]));
 
-        ArrayAdapter<CharSequence> menitOn = ArrayAdapter.createFromResource(this, R.array.menit, android.R.layout.simple_spinner_item);
-        menitOn.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        JamOff.setData(getListJam());
+        JamOff.setSelectedItemPosition(getListJam().indexOf(getsWaktuOff().split(":")[0].length()==1?"0"+getsWaktuOff().split(":")[0]:getsWaktuOff().split(":")[0]));
 
-        ArrayAdapter<CharSequence> menitOff = ArrayAdapter.createFromResource(this, R.array.menit, android.R.layout.simple_spinner_item);
-        menitOff.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        JamOn.setAdapter(jamOn);
-        JamOn.setSelection(jamOn.getPosition(getsWaktuOn().split(":")[0].length()==1?"0"+getsWaktuOn().split(":")[0]:getsWaktuOn().split(":")[0]));
-        MenitOn.setAdapter(menitOn);
-        MenitOn.setSelection(menitOn.getPosition(getsWaktuOn().split(":")[1].length()==1?"0"+getsWaktuOn().split(":")[1]:getsWaktuOn().split(":")[1]));
-
-        JamOff.setAdapter(jamOff);
-        JamOff.setSelection(jamOff.getPosition(getsWaktuOff().split(":")[0].length()==1?"0"+getsWaktuOff().split(":")[0]:getsWaktuOff().split(":")[0]));
-        MenitOff.setAdapter(menitOff);
-        MenitOff.setSelection(menitOff.getPosition(getsWaktuOff().split(":")[1].length()==1?"0"+getsWaktuOff().split(":")[1]:getsWaktuOff().split(":")[1]));
+        MenitOff.setData(getListMenit());
+        MenitOff.setSelectedItemPosition(getListMenit().indexOf(getsWaktuOff().split(":")[1].length()==1?"0"+getsWaktuOff().split(":")[1]:getsWaktuOff().split(":")[1]));
 
         choose_ir.setChecked(getSwitchButton());
 
@@ -171,13 +168,13 @@ public class MainActivity extends AppCompatActivity {
         int HourNow = currentTime.getHours();
         int MinuteNow = currentTime.getMinutes();
 
-        int HourOn = Integer.valueOf(JamOn.getSelectedItem().toString());
-        int MinuteOn = Integer.valueOf(MenitOn.getSelectedItem().toString());
+        int HourOn = Integer.valueOf(getListJam().get(JamOn.getCurrentItemPosition()));
+        int MinuteOn = Integer.valueOf(getListMenit().get(MenitOn.getCurrentItemPosition()));
 
         setsWaktuOn(HourOn+":"+MinuteOn);
 
-        int HourOff = Integer.valueOf(JamOff.getSelectedItem().toString());
-        int MinuteOff = Integer.valueOf(MenitOff.getSelectedItem().toString());
+        int HourOff = Integer.valueOf(getListJam().get(JamOff.getCurrentItemPosition()));
+        int MinuteOff = Integer.valueOf(getListMenit().get(MenitOff.getCurrentItemPosition()));
 
         setsWaktuOff(HourOff+":"+MinuteOff);
 
@@ -195,14 +192,14 @@ public class MainActivity extends AppCompatActivity {
                 count++;
             }
             a[7] = ~sum;
-
-            if (choose_ir.isChecked()){
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    ir.sendCode(a);
-                }
-            }else{
-                ir.sendCodeAudioOnly(a);
-            }
+            ir.sendCodeAudioCustom(a);
+//            if (choose_ir.isChecked()){
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+//                    ir.sendCode(a);
+//                }
+//            }else{
+//                ir.sendCodeAudioOnly(a);
+//            }
         });
         handler.postDelayed(() -> {
             btnKirim.setEnabled(true);
@@ -301,5 +298,105 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         doPutarLayar(0);
         super.onDestroy();
+    }
+
+    @OnClick(R.id.testSound)
+    public void testSound(){
+        genTone();
+        playSound();
+//        Date currentTime = Calendar.getInstance().getTime();
+//
+//        int HourNow = currentTime.getHours();
+//        int MinuteNow = currentTime.getMinutes();
+//
+//        int HourOn = Integer.valueOf(getListJam().get(JamOn.getCurrentItemPosition()));
+//        int MinuteOn = Integer.valueOf(getListMenit().get(MenitOn.getCurrentItemPosition()));
+//
+//        setsWaktuOn(HourOn+":"+MinuteOn);
+//
+//        int HourOff = Integer.valueOf(getListJam().get(JamOff.getCurrentItemPosition()));
+//        int MinuteOff = Integer.valueOf(getListMenit().get(MenitOff.getCurrentItemPosition()));
+//
+//        setsWaktuOff(HourOff+":"+MinuteOff);
+//
+//        btnKirim.setText("MENGIRIM DATA");
+//        btnKirim.setEnabled(false);
+//
+//        Handler handler = new Handler();
+//        handler.post(() -> {
+//            int[] d = new int[]{170, HourNow, MinuteNow, HourOn, MinuteOn, HourOff, MinuteOff};
+//            byte sum = 0;
+//            int count = 0;
+//            for (int i: d){
+//                a[count] = i;
+//                sum += (byte)i;
+//                count++;
+//            }
+//            a[7] = ~sum;
+//
+//            ir.sendCodeAudioCustom(a);
+//        });
+//        handler.postDelayed(() -> {
+//            btnKirim.setEnabled(true);
+//            btnKirim.setText("SEND");
+//        }, 2000);
+    }
+    private final int duration = 1; // seconds
+    private final int sampleRate = 44100;
+    private final int numSamples = duration * sampleRate / 2;
+//    private final int numSamples = 44100;
+    private final double sample[] = new double[numSamples];
+    private final double freqOfTone = 19000; // hz
+
+    private final byte generatedSnd[] = new byte[2 * numSamples];
+
+    void genTone(){
+        // fill out the array
+        Log.d(TAG, "genTone: "+numSamples);
+        for (int i = 0; i < numSamples; ++i) {
+            sample[i] = Math.sin(Math.PI * i / (sampleRate/freqOfTone));
+        }
+
+        // convert to 16 bit pcm sound array
+        // assumes the sample buffer is normalised.
+        int idx = 0;
+//        for (final double dVal : sample) {
+//            // scale to maximum amplitude
+////            if ((dVal & 1) == 1){
+////
+////            }
+//            final short val = (short) ((dVal * 32767));
+//            // in 16 bit wav PCM, first byte is the low order byte
+//            generatedSnd[idx++] = (byte) (val & 0x00ff);
+//            generatedSnd[idx++] = (byte) ((val & 0xff00) >>> 8);
+//
+//        }
+
+        for (int t=0;t<3333;t++){
+            final short val = (short) ((t * 32767));
+            if ((t & 1) == 1){
+                generatedSnd[idx++] = (byte) (0x7f);
+                generatedSnd[idx++] = (byte) (0xff);
+                generatedSnd[idx++] = (byte) ((0x80));
+                generatedSnd[idx++] = (byte) ((0x00));
+            }else{
+                generatedSnd[idx++] = (byte) ((0x80));
+                generatedSnd[idx++] = (byte) ((0x00));
+                generatedSnd[idx++] = (byte) (0x7f);
+                generatedSnd[idx++] = (byte) (0xff);
+            }
+            // scale to maximum amplitude
+            // in 16 bit wav PCM, first byte is the low order byte
+
+        }
+    }
+
+    void playSound(){
+        final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+                44100, AudioFormat.CHANNEL_OUT_STEREO,
+                AudioFormat.ENCODING_PCM_16BIT, generatedSnd.length,
+                AudioTrack.MODE_STATIC);
+        audioTrack.write(generatedSnd, 0, generatedSnd.length);
+        audioTrack.play();
     }
 }

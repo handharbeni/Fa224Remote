@@ -8,7 +8,7 @@
         android:gravity="center"
         android:textAlignment="center"
         android:layout_marginRight="15dp"
-        android:text="Infrared External"
+        android:text="IR External"
         android:layout_width="wrap_content"
         android:layout_height="match_parent" />
     <com.suke.widget.SwitchButton
@@ -19,7 +19,7 @@
         android:gravity="center"
         android:textAlignment="center"
         android:layout_marginLeft="15dp"
-        android:text="Infrared Internal"
+        android:text="IR Internal"
         android:layout_width="wrap_content"
         android:layout_height="match_parent" />
 </LinearLayout>

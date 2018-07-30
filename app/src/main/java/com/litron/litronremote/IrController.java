@@ -2,6 +2,8 @@ package com.litron.litronremote;
 
 import android.content.Context;
 import android.hardware.ConsumerIrManager;
+import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
@@ -22,7 +24,7 @@ public class IrController {
     private LircRemote currentRemote = null;
 
     private AudioTrack irAudioTrack = null;
-    private static final int SAMPLERATE = 48000;
+    private static final int SAMPLERATE = 44100;
 
     private Context mContext;
 
@@ -75,20 +77,6 @@ public class IrController {
             }
         }else{
             Toast.makeText(mContext, "Tidak terdapat Infrared dalam device anda", Toast.LENGTH_SHORT).show();
-//            Log.d(TAG, "sendCode: UsingSendCode Doesn't Have IrEmitter");
-//
-//            byte[] datas = new byte[]{
-//                    (byte) code[0],
-//                    (byte) code[1],
-//                    (byte) code[2],
-//                    (byte) code[3],
-//                    (byte) code[4],
-//                    (byte) code[5],
-//                    (byte) code[6],
-//                    (byte) code[7]
-//            };
-//
-//            sendUsingAudio(datas);
         }
     }
 
@@ -108,6 +96,22 @@ public class IrController {
         sendUsingAudio(datas);
     }
 
+    public void sendCodeAudioCustom(int[] code){
+        Log.d(TAG, "sendCode: UsingSendCodeAudioOnly");
+        byte[] datas = new byte[]{
+                (byte) code[0],
+                (byte) code[1],
+                (byte) code[2],
+                (byte) code[3],
+                (byte) code[4],
+                (byte) code[5],
+                (byte) code[6],
+                (byte) code[7]
+        };
+
+        sendUsingAudioCustom(datas);
+    }
+
 
     int bufSize;
     byte[] pAudio;
@@ -119,8 +123,6 @@ public class IrController {
     }
     private void sendUsingAudio(byte[] hexa){
 
-//        if (this.currentRemote != null) {
-//            adjustVolume(true);
             bufSize = 0;
             int[] p = new int[]{3333,3333,3333,3333,3333,3333,3333,3333,3333};
             int cf = 38000;
@@ -137,9 +139,25 @@ public class IrController {
             this.irAudioTrack.write(pAudio, 0, bufSize);
             this.irAudioTrack.setStereoVolume(1000.0f, 1000.0f);
             this.irAudioTrack.play();
-//            Handler handler  = new Handler();
-//            handler.postDelayed(()-> adjustVolume(false), 2000);
-//        }
+    }
+    private void sendUsingAudioCustom(byte[] hexa){
+
+        bufSize = 0;
+        int[] p = new int[]{3333,3333,3333,3333,3333,3333,3333,3333,3333};
+        int cf = 19000;
+
+        pAudio = new byte[12000 * 9 * 2];
+        double cfFactor = 0.5d;
+        bufSize = msToAudioCustom((int) Math.round(cfFactor * ((double) cf)), p, pAudio, hexa);
+        Log.d(TAG, "sendUsingAudio: BuffSize in MS " + bufSize);
+        if (this.irAudioTrack != null) {
+            this.irAudioTrack.flush();
+            this.irAudioTrack.release();
+        }
+        this.irAudioTrack = new AudioTrack(3, SAMPLERATE, AudioFormat.CHANNEL_OUT_STEREO, 2, bufSize, 0);
+        this.irAudioTrack.write(pAudio, 0, bufSize);
+        this.irAudioTrack.setStereoVolume(1000.0f, 1000.0f);
+        this.irAudioTrack.play();
     }
     private void adjustVolume(boolean isPlay){
         if (isPlay){
@@ -213,6 +231,103 @@ public class IrController {
             }
         }
         return j;
+    }
+    private int msToAudioCustom(int cf, int[] signals, byte[] outptr, byte[] datas) {
+        int j = 0;
+        for (byte dt : datas){
+            boolean signalPhase = false;
+            double carrierPosRad = 0.0d;
+            double carrierStepRad = ((((double) cf) * 3.141592653589793d) * 2.0d) / 44100.0d;
+            while (j < 4800) {
+                outptr[j] = Byte.MIN_VALUE;
+                j++;
+            }
+            int i = 0;
+
+            while (i < signals.length) {
+                if (i == 0){
+                    signalPhase = true;
+                }else{
+                    if ((dt & 1) == 1){
+                        signalPhase = false;
+                    }else{
+                        signalPhase = true;
+                    }
+                    dt = (byte) (dt >> (byte)1);
+                }
+                int j2 = j;
+                for (int currentSignal = signals[i];
+                     currentSignal > 0;
+                     currentSignal = (int) (((double) currentSignal) - 20.833333333333332d)) {
+                    int out;
+                    if (signalPhase) {
+                        out = (int) Math.round((Math.sin(carrierPosRad) * 32767.0d) + 32768.0d);
+                    } else {
+                        out = 32768;
+                    }
+                    j = j2 + 1;
+                    outptr[j2] = (byte) out;
+                    j2 = j + 1;
+                    outptr[j] = (byte) (65536 - out);
+                    carrierPosRad += carrierStepRad;
+                }
+                i++;
+                j = j2;
+            }
+            i = 0;
+            while (i < signals.length) {
+                int j2 = j;
+                for (int currentSignal = signals[i];
+                     currentSignal > 0;
+                     currentSignal = (int) (((double) currentSignal) - 20.833333333333332d)) {
+                    int out;
+                    out = 32768;
+                    j = j2 + 1;
+                    outptr[j2] = (byte) out;
+                    j2 = j + 1;
+                    outptr[j] = (byte) (65536 - out);
+                    carrierPosRad += carrierStepRad;
+                }
+                i++;
+                j = j2;
+            }
+        }
+        return j;
+    }
+    private final int duration = 3; // seconds
+    private final int sampleRate = 44100;
+    private final int numSamples = 3333;
+    private final double sample[] = new double[numSamples];
+    private final double freqOfTone = 19000; // hz
+
+    private final byte generatedSnd[] = new byte[2 * numSamples];
+
+    void genTone(){
+        // fill out the array
+        for (int i = 0; i < numSamples; ++i) {
+            sample[i] = Math.sin(2 * Math.PI * i / (sampleRate/freqOfTone));
+        }
+
+        // convert to 16 bit pcm sound array
+        // assumes the sample buffer is normalised.
+        int idx = 0;
+        for (final double dVal : sample) {
+            // scale to maximum amplitude
+            final short val = (short) ((dVal * 32767));
+            // in 16 bit wav PCM, first byte is the low order byte
+            generatedSnd[idx++] = (byte) (val & 0x00ff);
+            generatedSnd[idx++] = (byte) ((val & 0xff00) >>> 8);
+
+        }
+    }
+
+    void playSound(){
+        final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+                sampleRate, AudioFormat.CHANNEL_OUT_STEREO,
+                AudioFormat.ENCODING_PCM_16BIT, generatedSnd.length,
+                AudioTrack.MODE_STATIC);
+        audioTrack.write(generatedSnd, 0, generatedSnd.length);
+        audioTrack.play();
     }
 
     public interface IrRemote {
