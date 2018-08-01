@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    int[] a = new int[8];
+    int[] a = new int[9];
 
     private static String S_WAKTU_ON = "WaktuON";
     private static String S_WAKTU_OFF = "WaktuOFF";
@@ -167,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
 
         int HourNow = currentTime.getHours();
         int MinuteNow = currentTime.getMinutes();
+        int SecondNow = currentTime.getSeconds();
 
         int HourOn = Integer.valueOf(getListJam().get(JamOn.getCurrentItemPosition()));
         int MinuteOn = Integer.valueOf(getListMenit().get(MenitOn.getCurrentItemPosition()));
@@ -183,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
 
         Handler handler = new Handler();
         handler.post(() -> {
-            int[] d = new int[]{170, HourNow, MinuteNow, HourOn, MinuteOn, HourOff, MinuteOff};
+            int[] d = new int[]{170, HourNow, MinuteNow, SecondNow, HourOn, MinuteOn, HourOff, MinuteOff};
             byte sum = 0;
             int count = 0;
             for (int i: d){
@@ -191,15 +192,28 @@ public class MainActivity extends AppCompatActivity {
                 sum += (byte)i;
                 count++;
             }
-            a[7] = ~sum;
-            ir.sendCodeAudioCustom(a);
-//            if (choose_ir.isChecked()){
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-//                    ir.sendCode(a);
-//                }
-//            }else{
+            a[8] = ~sum;
+//            ir.sendCodeAudioCustom(a);
+            if (choose_ir.isChecked()){
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    ir.sendCode(a);
+                }
+            }else{
+                byte[] datas = new byte[]{
+                        (byte) a[0],
+                        (byte) a[1],
+                        (byte) a[2],
+                        (byte) a[3],
+                        (byte) a[4],
+                        (byte) a[5],
+                        (byte) a[6],
+                        (byte) a[7],
+                        (byte) a[8]
+                };
+
+                ir.sendUsingAudio16Bit(datas);
 //                ir.sendCodeAudioOnly(a);
-//            }
+            }
         });
         handler.postDelayed(() -> {
             btnKirim.setEnabled(true);
@@ -302,8 +316,28 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.testSound)
     public void testSound(){
-        genTone();
-        playSound();
+        int[] d = new int[]{170, 03, 04, 18, 04, 05, 30};
+        byte sum = 0;
+        int count = 0;
+        for (int i: d){
+            a[count] = i;
+            sum += (byte)i;
+            count++;
+        }
+        a[7] = ~sum;
+        byte[] datas = new byte[]{
+                (byte) a[0],
+                (byte) a[1],
+                (byte) a[2],
+                (byte) a[3],
+                (byte) a[4],
+                (byte) a[5],
+                (byte) a[6],
+                (byte) a[7]
+        };
+        ir.sendUsingAudio16Bit(datas);
+//        genTone();
+//        playSound();
 //        Date currentTime = Calendar.getInstance().getTime();
 //
 //        int HourNow = currentTime.getHours();
