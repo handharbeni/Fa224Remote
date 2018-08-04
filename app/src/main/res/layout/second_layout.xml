@@ -34,7 +34,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
             <include
-                android:layout_margin="25dp"
+                android:layout_margin="15dp"
                 android:id="@+id/etWaktuOn"
                 layout="@layout/et_waktuon"
                 android:layout_width="wrap_content"
@@ -44,7 +44,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
             <include
-                android:layout_margin="25dp"
+                android:layout_margin="15dp"
                 android:id="@+id/etWaktuOff"
                 layout="@layout/et_waktuoff"
                 android:layout_width="wrap_content"
@@ -101,6 +101,7 @@
             app:layout_constraintVertical_bias="0.069" />
 
         <android.support.v7.widget.AppCompatButton
+            android:visibility="gone"
             android:id="@+id/testSound"
             android:text="Test Button Sound"
             android:layout_width="wrap_content"

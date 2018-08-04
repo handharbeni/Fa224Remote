@@ -21,7 +21,7 @@ import static android.content.ContentValues.TAG;
 public class IrController {
 
     private ConsumerIrManager irService;
-//    private AudioManager audioManager;
+    private AudioManager audioManager;
     private LircRemote currentRemote = null;
 
     private AudioTrack irAudioTrack = null;
@@ -30,7 +30,7 @@ public class IrController {
 
     private Context mContext;
 
-//    private int max, current;
+    private int max, current;
 
 
 
@@ -39,9 +39,9 @@ public class IrController {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             irService = (ConsumerIrManager) context.getSystemService(Context.CONSUMER_IR_SERVICE);
         }
-//        audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-//        max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-//        current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
         setData();
     }
@@ -166,12 +166,12 @@ public class IrController {
     }
     private void adjustVolume(boolean isPlay){
         if (isPlay){
-//            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, max, AudioManager.FLAG_PLAY_SOUND);
-//            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND);
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, max, AudioManager.FLAG_PLAY_SOUND);
+            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND);
 //            Log.d(TAG, "adjustVolume: Playing "+audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
         }else{
-//            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, current, AudioManager.FLAG_PLAY_SOUND);
-//            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_PLAY_SOUND);
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, current, AudioManager.FLAG_PLAY_SOUND);
+            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_PLAY_SOUND);
 //            Log.d(TAG, "adjustVolume: Stopping "+audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
         }
     }
@@ -300,14 +300,135 @@ public class IrController {
         }
         return j;
     }
+    byte JumlahByte = 19;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum = 15byte(8 data + 6 jeda)
+    int SampleRate = 44100;
     byte TotalByte = 16;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum,jeda = 16byte(8 data + 7 jeda)
-    byte JumlahBit = 8;
+    byte JumlahBit = 9;
     double freqHz = 19000;
-    int durationuS = 1500;
+    int durationuS = 3333;
     int TotalBuffer = (int)(((44100.0 * 2 * (durationuS / 1000000.0))*JumlahBit)*TotalByte) & ~1;
     int BufferPerByte = TotalBuffer/TotalByte;
     int idx = 0;
-    short[] samples = new short[12000 * 9];
+    byte ke = 0;
+    byte[] samples = new byte[12000 * 9];
+
+    public void newMethod(){
+//        int durationuS = 1500;
+        int count = (int)(((44100.0 * 2.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1;
+        byte[] samples = new byte[count];
+        for(int i = 0; i < count; i += 2){
+//            short sample = (short)(Math.sin(2 * Math.PI * i / (SampleRate / freqHz)) * 0x7FFF);
+            switch (ke){
+                case 0:
+//                    start
+                    samples[i + 0] = (byte)255;
+                    samples[i + 1] = (byte)127;
+//                    samples[i + 1] = (byte)~255;
+                    ke = 1;
+                    break;
+                case 1 :
+//                    middle
+                    samples[i + 0] = (byte)127;
+                    samples[i + 1] = (byte)~255;
+//                    samples[i + 1] = (byte)127;
+                    ke = 2;
+                    break;
+                case 2 :
+//                    end
+                    samples[i + 0] = (byte)~255;
+                    samples[i + 1] = (byte)255;
+                    ke = 0;
+                    break;
+            }
+        }
+        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, SampleRate,
+                AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_8BIT,
+                count, AudioTrack.MODE_STATIC);
+        track.write(samples, 0, count);
+        track.play();
+    }
+
+    public void newMethod(byte[] data){
+        if (!audioManager.isWiredHeadsetOn()){
+            Toast.makeText(mContext, "Belum Ada Perangkat IR External pada Device Anda", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        adjustVolume(true);
+        int count = (int)(((44100.0 * 2.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1;
+        byte[] samples = new byte[count];
+        int idx = 0;
+        for (byte datas : data){
+            for(int k = 0; k < count/(9*JumlahByte); k += 2){
+                switch (ke){
+                    case 0:
+                        samples[idx + 0] = (byte)255;
+                        samples[idx + 1] = (byte)127;
+//                    samples[i + 1] = (byte)~255;
+                        ke = 1;
+                        break;
+                    case 1 :
+//                    middle
+                        samples[idx + 0] = (byte)127;
+                        samples[idx + 1] = (byte)~255;
+//                    samples[i + 1] = (byte)127;
+                        ke = 2;
+                        break;
+                    case 2 :
+//                    end
+                        samples[idx + 0] = (byte)~255;
+                        samples[idx + 1] = (byte)255;
+                        ke = 0;
+                        break;
+                }
+                idx += 2;
+            }
+            for (int j=0;j<8;j++){
+                for(int i = 0; i < count/(9*JumlahByte); i += 2){
+                    if ((datas & 1)==1){
+                        samples[idx + 0] = (byte)127;
+                        samples[idx + 1] = (byte)127;
+                    }else{
+                        switch (ke){
+                            case 0:
+                                samples[idx + 0] = (byte)255;
+                                samples[idx + 1] = (byte)127;
+//                    samples[i + 1] = (byte)~255;
+                                ke = 1;
+                                break;
+                            case 1 :
+//                    middle
+                                samples[idx + 0] = (byte)127;
+                                samples[idx + 1] = (byte)~255;
+//                    samples[i + 1] = (byte)127;
+                                ke = 2;
+                                break;
+                            case 2 :
+//                    end
+                                samples[idx + 0] = (byte)~255;
+                                samples[idx + 1] = (byte)255;
+                                ke = 0;
+                                break;
+                        }
+                    }
+                    idx += 2;
+                }
+                datas = (byte) (datas >> (byte)1);
+
+            }
+            for(int i = 0; i < count/(JumlahByte); i += 2){
+                samples[idx + 0] = (byte) 127;
+                samples[idx + 1] = (byte) 127;
+                idx += 2;
+            }
+
+        }
+        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, SampleRate,
+                AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_8BIT,
+                count, AudioTrack.MODE_STATIC);
+        track.write(samples, 0, count);
+        track.play();
+        adjustVolume(false);
+    }
 
     public void sendUsingAudio16Bit(byte[] datas){
         TotalBuffer = (int)(((44100.0 * 2 * (durationuS / 1000000.0))*JumlahBit)*TotalByte) & ~1;
@@ -394,6 +515,8 @@ public class IrController {
     }
 
 
+
+
     public interface IrRemote {
         int getCarrierFrequency();
 
@@ -411,7 +534,7 @@ public class IrController {
         }
 
         public int[] getPattern(int key) {
-            return (int[]) this.keys.get(Integer.valueOf(key));
+            return this.keys.get(key);
         }
 
         public Set<Integer> getKeys() {

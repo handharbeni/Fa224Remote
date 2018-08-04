@@ -211,7 +211,8 @@ public class MainActivity extends AppCompatActivity {
                         (byte) a[8]
                 };
 
-                ir.sendUsingAudio16Bit(datas);
+//                ir.sendUsingAudio16Bit(datas);
+                ir.newMethod(datas);
 //                ir.sendCodeAudioOnly(a);
             }
         });
@@ -335,7 +336,8 @@ public class MainActivity extends AppCompatActivity {
                 (byte) a[6],
                 (byte) a[7]
         };
-        ir.sendUsingAudio16Bit(datas);
+//        ir.sendUsingAudio16Bit(datas);
+        ir.newMethod(datas);
 //        genTone();
 //        playSound();
 //        Date currentTime = Calendar.getInstance().getTime();
