@@ -90,4 +90,5 @@
         <item>60</item>
     </string-array>
     <string name="title_activity_bantuan">Bantuan</string>
+    <string name="action_help">HELP</string>
 </resources>

@@ -1,7 +1,6 @@
 package com.litron.litronremote;
 
 import android.app.AlertDialog;
-import android.app.DialogFragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,12 +12,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatButton;
 import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.TextView;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.aigestudio.wheelpicker.WheelPicker;
 import com.suke.widget.SwitchButton;
@@ -61,15 +60,10 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.MenitOff)
     WheelPicker MenitOff;
 
-    @BindView(R.id.txtBantuan)
-    TextView txtBantuan;
-
     @BindView(R.id.choose_ir)
     SwitchButton choose_ir;
 
-    @BindView(R.id.testSound)
-    AppCompatButton testSound;
-
+    private int max, current;
 
 
 
@@ -78,7 +72,9 @@ public class MainActivity extends AppCompatActivity {
     private static String S_WAKTU_ON = "WaktuON";
     private static String S_WAKTU_OFF = "WaktuOFF";
     private static String S_SWITCH_BUTTON = "SwitchBUTTON";
-    String sWaktuOn, sWaktuOff, sButton;
+
+    private AudioManager audioManager;
+
 
     public String getsWaktuOn() {
         return sharedPreferences.getString(S_WAKTU_ON, "17:59");
@@ -128,17 +124,19 @@ public class MainActivity extends AppCompatActivity {
         return Arrays.asList(getResources().getStringArray(R.array.menit));
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sharedPreferences = getSharedPreferences("LITRONRemote", Context.MODE_PRIVATE);
         initPermission();
+        audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+
 
         ir = new IrController(this);
 
         setContentView(R.layout.second_layout);
         ButterKnife.bind(this);
+
 
         initDataShared();
     }
@@ -184,6 +182,10 @@ public class MainActivity extends AppCompatActivity {
 
         Handler handler = new Handler();
         handler.post(() -> {
+            assert audioManager != null;
+            max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
             int[] d = new int[]{170, HourNow, MinuteNow, SecondNow, HourOn, MinuteOn, HourOff, MinuteOff};
             byte sum = 0;
             int count = 0;
@@ -193,12 +195,16 @@ public class MainActivity extends AppCompatActivity {
                 count++;
             }
             a[8] = ~sum;
-//            ir.sendCodeAudioCustom(a);
             if (choose_ir.isChecked()){
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     ir.sendCode(a);
+                }else{
+                    choose_ir.toggle();
+                    Toast.makeText(this, "Not Support Operating System, Please Using IR External", Toast.LENGTH_SHORT).show();
                 }
             }else{
+                adjustVolume(true);
+
                 byte[] datas = new byte[]{
                         (byte) a[0],
                         (byte) a[1],
@@ -210,28 +216,49 @@ public class MainActivity extends AppCompatActivity {
                         (byte) a[7],
                         (byte) a[8]
                 };
-
-//                ir.sendUsingAudio16Bit(datas);
-                ir.newMethod(datas);
-//                ir.sendCodeAudioOnly(a);
+                ir.sendUsingAudio(datas);
             }
         });
         handler.postDelayed(() -> {
+            adjustVolume(false);
             btnKirim.setEnabled(true);
             btnKirim.setText("SEND");
         }, 2000);
     }
 
-    @OnClick(R.id.txtBantuan)
     public void showBantuan(){
         Intent i = new Intent(this,BantuanActivity.class);
         startActivity(i);
         overridePendingTransition(R.anim.slide_up, R.anim.stay);
-
     }
-
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_help) {
+            showBantuan();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
     private void initPermission(){
-        if (android.os.Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED){
+//                requestPermissions(
+//                        new String[]{Manifest.permission.CAMERA,
+//                                Manifest.permission.TRANSMIT_IR
+//                        }, 1);
+//            }
+        }
+        if (Build.VERSION.SDK_INT >= 23) {
             boolean retVal = Settings.System.canWrite(this);
             if (retVal){
                 initPutarLayar();
@@ -296,18 +323,33 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+    private void adjustVolume(boolean isPlay){
+//        audioManager.setSpeakerphoneOn(true);
+        Log.d(TAG, "adjustVolume: Max "+max);
+        Log.d(TAG, "adjustVolume: Current "+current);
+        if (isPlay){
+            if (current > (audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)/2)){
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), AudioManager.FLAG_VIBRATE);
+            }else{
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)/2)-1, AudioManager.FLAG_VIBRATE);
+            }
+//            audioManager.setSpeakerphoneOn(false);
+        }else{
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, current, AudioManager.FLAG_VIBRATE);
+        }
+    }
 
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-////        initPutarLayar();
-//    }
-//
-//    @Override
-//    protected void onPause() {
-//        doPutarLayar(0);
-//        super.onPause();
-//    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        initPutarLayar();
+    }
+
+    @Override
+    protected void onPause() {
+        doPutarLayar(0);
+        super.onPause();
+    }
 
     @Override
     protected void onDestroy() {
@@ -315,124 +357,4 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    @OnClick(R.id.testSound)
-    public void testSound(){
-        int[] d = new int[]{170, 03, 04, 18, 04, 05, 30};
-        byte sum = 0;
-        int count = 0;
-        for (int i: d){
-            a[count] = i;
-            sum += (byte)i;
-            count++;
-        }
-        a[7] = ~sum;
-        byte[] datas = new byte[]{
-                (byte) a[0],
-                (byte) a[1],
-                (byte) a[2],
-                (byte) a[3],
-                (byte) a[4],
-                (byte) a[5],
-                (byte) a[6],
-                (byte) a[7]
-        };
-//        ir.sendUsingAudio16Bit(datas);
-        ir.newMethod(datas);
-//        genTone();
-//        playSound();
-//        Date currentTime = Calendar.getInstance().getTime();
-//
-//        int HourNow = currentTime.getHours();
-//        int MinuteNow = currentTime.getMinutes();
-//
-//        int HourOn = Integer.valueOf(getListJam().get(JamOn.getCurrentItemPosition()));
-//        int MinuteOn = Integer.valueOf(getListMenit().get(MenitOn.getCurrentItemPosition()));
-//
-//        setsWaktuOn(HourOn+":"+MinuteOn);
-//
-//        int HourOff = Integer.valueOf(getListJam().get(JamOff.getCurrentItemPosition()));
-//        int MinuteOff = Integer.valueOf(getListMenit().get(MenitOff.getCurrentItemPosition()));
-//
-//        setsWaktuOff(HourOff+":"+MinuteOff);
-//
-//        btnKirim.setText("MENGIRIM DATA");
-//        btnKirim.setEnabled(false);
-//
-//        Handler handler = new Handler();
-//        handler.post(() -> {
-//            int[] d = new int[]{170, HourNow, MinuteNow, HourOn, MinuteOn, HourOff, MinuteOff};
-//            byte sum = 0;
-//            int count = 0;
-//            for (int i: d){
-//                a[count] = i;
-//                sum += (byte)i;
-//                count++;
-//            }
-//            a[7] = ~sum;
-//
-//            ir.sendCodeAudioCustom(a);
-//        });
-//        handler.postDelayed(() -> {
-//            btnKirim.setEnabled(true);
-//            btnKirim.setText("SEND");
-//        }, 2000);
-    }
-    private final int duration = 1; // seconds
-    private final int sampleRate = 44100;
-    private final int numSamples = duration * sampleRate / 2;
-//    private final int numSamples = 44100;
-    private final double sample[] = new double[numSamples];
-    private final double freqOfTone = 19000; // hz
-
-    private final byte generatedSnd[] = new byte[2 * numSamples];
-
-    void genTone(){
-        // fill out the array
-        Log.d(TAG, "genTone: "+numSamples);
-        for (int i = 0; i < numSamples; ++i) {
-            sample[i] = Math.sin(Math.PI * i / (sampleRate/freqOfTone));
-        }
-
-        // convert to 16 bit pcm sound array
-        // assumes the sample buffer is normalised.
-        int idx = 0;
-//        for (final double dVal : sample) {
-//            // scale to maximum amplitude
-////            if ((dVal & 1) == 1){
-////
-////            }
-//            final short val = (short) ((dVal * 32767));
-//            // in 16 bit wav PCM, first byte is the low order byte
-//            generatedSnd[idx++] = (byte) (val & 0x00ff);
-//            generatedSnd[idx++] = (byte) ((val & 0xff00) >>> 8);
-//
-//        }
-
-        for (int t=0;t<3333;t++){
-            final short val = (short) ((t * 32767));
-            if ((t & 1) == 1){
-                generatedSnd[idx++] = (byte) (0x7f);
-                generatedSnd[idx++] = (byte) (0xff);
-                generatedSnd[idx++] = (byte) ((0x80));
-                generatedSnd[idx++] = (byte) ((0x00));
-            }else{
-                generatedSnd[idx++] = (byte) ((0x80));
-                generatedSnd[idx++] = (byte) ((0x00));
-                generatedSnd[idx++] = (byte) (0x7f);
-                generatedSnd[idx++] = (byte) (0xff);
-            }
-            // scale to maximum amplitude
-            // in 16 bit wav PCM, first byte is the low order byte
-
-        }
-    }
-
-    void playSound(){
-        final AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                44100, AudioFormat.CHANNEL_OUT_STEREO,
-                AudioFormat.ENCODING_PCM_16BIT, generatedSnd.length,
-                AudioTrack.MODE_STATIC);
-        audioTrack.write(generatedSnd, 0, generatedSnd.length);
-        audioTrack.play();
-    }
 }
