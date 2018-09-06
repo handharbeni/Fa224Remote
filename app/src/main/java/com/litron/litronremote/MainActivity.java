@@ -180,50 +180,49 @@ public class MainActivity extends AppCompatActivity {
         btnKirim.setText("MENGIRIM DATA");
         btnKirim.setEnabled(false);
 
-        Handler handler = new Handler();
-        handler.post(() -> {
-            assert audioManager != null;
-            max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        assert audioManager != null;
+        max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
-            int[] d = new int[]{170, HourNow, MinuteNow, SecondNow, HourOn, MinuteOn, HourOff, MinuteOff};
-            byte sum = 0;
-            int count = 0;
-            for (int i: d){
-                a[count] = i;
-                sum += (byte)i;
-                count++;
-            }
-            a[8] = ~sum;
-            if (choose_ir.isChecked()){
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    ir.sendCode(a);
-                }else{
-                    choose_ir.toggle();
-                    Toast.makeText(this, "Not Support Operating System, Please Using IR External", Toast.LENGTH_SHORT).show();
-                }
+        int[] d = new int[]{170, HourNow, MinuteNow, SecondNow, HourOn, MinuteOn, HourOff, MinuteOff};
+        byte sum = 0;
+        int count = 0;
+        for (int i: d){
+            a[count] = i;
+            sum += (byte)i;
+            count++;
+        }
+        a[8] = ~sum;
+        if (choose_ir.isChecked()){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                ir.sendCode(a);
             }else{
-                adjustVolume(true);
-
-                byte[] datas = new byte[]{
-                        (byte) a[0],
-                        (byte) a[1],
-                        (byte) a[2],
-                        (byte) a[3],
-                        (byte) a[4],
-                        (byte) a[5],
-                        (byte) a[6],
-                        (byte) a[7],
-                        (byte) a[8]
-                };
-                ir.sendUsingAudio(datas);
+                choose_ir.toggle();
+                Toast.makeText(this, "Not Support Operating System, Please Using IR External", Toast.LENGTH_SHORT).show();
             }
-        });
-        handler.postDelayed(() -> {
+        }else{
+            adjustVolume(true);
+
+            byte[] datas = new byte[]{
+                    (byte) a[0],
+                    (byte) a[1],
+                    (byte) a[2],
+                    (byte) a[3],
+                    (byte) a[4],
+                    (byte) a[5],
+                    (byte) a[6],
+                    (byte) a[7],
+                    (byte) a[8]
+            };
+            new Handler().post(() -> ir.newMethod(datas, false));
+            new Handler().postDelayed(() -> ir.newMethod(datas, true), 600);
+        }
+
+        new Handler().postDelayed(() -> {
             adjustVolume(false);
             btnKirim.setEnabled(true);
             btnKirim.setText("SEND");
-        }, 2000);
+        }, 3000);
     }
 
     public void showBantuan(){
