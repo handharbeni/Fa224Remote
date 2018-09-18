@@ -7,6 +7,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.util.Log;
 import android.widget.Toast;
 
 public class IrController {
@@ -64,16 +65,17 @@ public class IrController {
 
         int bufSize;
         int[] p = new int[]{3333,3333,3333,3333,3333,3333,3333,3333,3333};
-        int cf = 38000;
+//        int cf = 100000;
+        int cf = 1000;
 
-        byte[] pAudio = new byte[12000 * 9];
+        byte[] pAudio = new byte[8000 * 9];
         double cfFactor = 0.5d;
         bufSize = msToAudio((int) Math.round(cfFactor * ((double) cf)), p, pAudio, hexa);
         if (this.irAudioTrack != null) {
             this.irAudioTrack.flush();
             this.irAudioTrack.release();
         }
-        this.irAudioTrack = new AudioTrack(3, SAMPLERATE, 3, 3, bufSize, 0);
+        this.irAudioTrack = new AudioTrack(3, SAMPLERATE, AudioFormat.CHANNEL_OUT_MONO, 3, bufSize, 0);
         this.irAudioTrack.write(pAudio, 0, bufSize);
         this.irAudioTrack.setStereoVolume(1000.0f, 1000.0f);
         this.irAudioTrack.play();
@@ -83,7 +85,7 @@ public class IrController {
         for (byte dt : datas){
             boolean signalPhase = false;
             double carrierPosRad = 0.0d;
-            double carrierStepRad = ((((double) cf) * 3.141592653589793d) * 2.0d) / 48000.0d;
+            double carrierStepRad = (((((double) cf) * 3.141592653589793d) * 1.0d) / 44100.0d) / 4.0d;
             while (j < 4800) {
                 outptr[j] = Byte.MIN_VALUE;
                 j++;
@@ -111,10 +113,11 @@ public class IrController {
                     } else {
                         out = 128;
                     }
-                    j = j2 + 1;
+//                    j = j2 + 1;
                     outptr[j2] = (byte) out;
+//                    j2++;
                     j2 = j + 1;
-                    outptr[j] = (byte) (256 - out);
+//                    outptr[j] = (byte) (256 - out);
                     carrierPosRad += carrierStepRad;
                 }
                 i++;
@@ -128,10 +131,11 @@ public class IrController {
                      currentSignal = (int) (((double) currentSignal) - 20.833333333333332d)) {
                     int out;
                     out = 128;
-                    j = j2 + 1;
+//                    j = j2 + 1;
                     outptr[j2] = (byte) out;
+//                    j2++;
                     j2 = j + 1;
-                    outptr[j] = (byte) (256 - out);
+//                    outptr[j] = (byte) (256 - out);
                     carrierPosRad += carrierStepRad;
                 }
                 i++;
@@ -141,99 +145,60 @@ public class IrController {
         return j;
     }
 
-    byte JumlahByte = 19;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum = 15byte(8 data + 6 jeda)
-    int SampleRate = 44100;
-    byte TotalByte = 16;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum,jeda = 16byte(8 data + 7 jeda)
-    byte JumlahBit = 9;
-    double freqHz = 19000;
-    int durationuS = 3333;
-    int TotalBuffer = (int)(((44100.0 * 2 * (durationuS / 1000000.0))*JumlahBit)*TotalByte) & ~1;
-    int BufferPerByte = TotalBuffer/TotalByte;
-    int idx = 0;
-    byte ke = 0;
-    byte[] samples = new byte[12000 * 9];
-
-    public void newMethod(){
-//        int durationuS = 1500;
-        int count = (int)(((44100.0 * 2.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1;
-        byte[] samples = new byte[count];
-        for(int i = 0; i < count; i += 2){
-//            short sample = (short)(Math.sin(2 * Math.PI * i / (SampleRate / freqHz)) * 0x7FFF);
-            switch (ke){
-                case 0:
-//                    start
-                    samples[i + 0] = (byte)255;
-                    samples[i + 1] = (byte)127;
-//                    samples[i + 1] = (byte)~255;
-                    ke = 1;
-                    break;
-                case 1 :
-//                    middle
-                    samples[i + 0] = (byte)127;
-                    samples[i + 1] = (byte)~255;
-//                    samples[i + 1] = (byte)127;
-                    ke = 2;
-                    break;
-                case 2 :
-//                    end
-                    samples[i + 0] = (byte)~255;
-                    samples[i + 1] = (byte)255;
-                    ke = 0;
-                    break;
+    private byte JumlahByte = 19;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum = 15byte(8 data + 6 jeda)
+    private int SampleRate = 44100;
+    private double freqHz = 5000;
+    private int durationuS = 3333;
+    private byte JumlahBit = 9;
+    private byte bit = (byte) 0x7F;
+    public void newMethod(byte[] data){
+        try{
+            int count = ((int)(((44100.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1)*2;
+            byte[] samples = new byte[count * 2];
+            int idx = 0;
+            int iSample = 1;
+            for (byte datas : data){
+                for(int k = 0; k < count/(9*JumlahByte); k += 1){
+//                    Log.e("IDX", "newMethod: a "+getSinus(iSample));
+                    samples[idx] = getSinus(iSample);
+                    samples[idx + 1] = getSinus(iSample);
+                    iSample++;
+                    idx+=2;
+                }
+                for (int j=0;j<8;j++){
+                    for(int i = 0; i < count/(9*JumlahByte); i += 1){
+                        if ((datas & 1)==1){
+//                            Log.e("IDX", "newMethod: b "+getSinus(iSample));
+                            samples[idx] = getSinus(iSample);
+                            samples[idx + 1] = getSinus(iSample);
+                        }else{
+                            samples[idx] = (byte)0;
+                            samples[idx + 1] = (byte) 0;
+                        }
+                        iSample++;
+                        idx+=2;
+                    }
+                    datas = (byte) (datas >> (byte)1);
+                }
+                for(int i = 0; i < count/(JumlahByte); i += 1){
+//                    Log.e("IDX", "newMethod: c "+getSinus(iSample));
+                    samples[idx] = getSinus(iSample);
+                    samples[idx + 1] = getSinus(iSample);
+                    iSample++;
+                    idx+=2;
+                }
             }
+            AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, SampleRate,
+                    AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
+                    count, AudioTrack.MODE_STATIC);
+            track.write(samples, 0, count);
+            track.play();
+        }catch (IllegalStateException e){
+            Toast.makeText(mContext, "Audio Belum Siap, Restart Aplikasi..", Toast.LENGTH_SHORT).show();
         }
-        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, SampleRate,
-                AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_8BIT,
-                count, AudioTrack.MODE_STATIC);
-        track.write(samples, 0, count);
-        track.play();
     }
 
-    public void newMethod(byte[] data, boolean invers){
-        byte d;
-        if (invers){
-            d = (byte) 255;
-        }else{
-            d = (byte) ~255;
-        }
-//        if (!audioManager.isWiredHeadsetOn()){
-//            Toast.makeText(mContext, "Belum Ada Perangkat IR External pada Device Anda", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//        adjustVolume(true);
-        int count = (int)(((44100.0 * 2.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1;
-        byte[] samples = new byte[count];
-        int idx = 0;
-        for (byte datas : data){
-            for(int k = 0; k < count/(9*JumlahByte); k += 2){
-                samples[idx + 0] = (byte)d;
-                samples[idx + 1] = (byte)d;
-                idx+=2;
-            }
-            for (int j=0;j<8;j++){
-                for(int i = 0; i < count/(9*JumlahByte); i += 2){
-                    if ((datas & 1)==1){
-                        samples[idx + 0] = (byte)~d;
-                        samples[idx + 1] = (byte)~d;
-                    }else{
-                        samples[idx + 0] = (byte)d;
-                        samples[idx + 1] = (byte)d;
-                    }
-                    idx += 2;
-                }
-                datas = (byte) (datas >> (byte)1);
-
-            }
-            for(int i = 0; i < count/(JumlahByte); i += 2){
-                samples[idx + 0] = (byte) ~d;
-                samples[idx + 1] = (byte) ~d;
-                idx += 2;
-            }
-        }
-        AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, SampleRate,
-                AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_8BIT,
-                count, AudioTrack.MODE_STATIC);
-        track.write(samples, 0, count);
-        track.play();
+    private byte getSinus(int iSample){
+        return (byte) (Math.sin(2 * Math.PI * iSample / (SampleRate / freqHz)) * bit);
     }
 }

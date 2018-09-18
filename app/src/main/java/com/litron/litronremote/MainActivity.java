@@ -214,15 +214,16 @@ public class MainActivity extends AppCompatActivity {
                     (byte) a[7],
                     (byte) a[8]
             };
-            new Handler().post(() -> ir.newMethod(datas, false));
-            new Handler().postDelayed(() -> ir.newMethod(datas, true), 600);
+            new Handler().post(() -> ir.newMethod(datas));
+//            new Handler().postDelayed(() -> ir.newMethod(datas, true), 600);
+//            ir.sendUsingAudio(datas);
         }
 
         new Handler().postDelayed(() -> {
             adjustVolume(false);
             btnKirim.setEnabled(true);
             btnKirim.setText("SEND");
-        }, 3000);
+        }, 1000);
     }
 
     public void showBantuan(){
