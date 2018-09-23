@@ -145,7 +145,7 @@ public class IrController {
         return j;
     }
 
-    private byte JumlahByte = 19;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum = 15byte(8 data + 6 jeda)
+    private byte JumlahByte = 35;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum = 15byte(8 data + 6 jeda)
     private int SampleRate = 44100;
     private double freqHz = 5000;
     private int durationuS = 3333;
@@ -153,7 +153,7 @@ public class IrController {
     private byte bit = (byte) 0x7F;
     public void newMethod(byte[] data){
         try{
-            int count = ((int)(((44100.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1)*2;
+            int count = ((int)(((2.0 * 44100.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1);
             byte[] samples = new byte[count * 2];
             int idx = 0;
             int iSample = 1;
@@ -169,11 +169,11 @@ public class IrController {
                     for(int i = 0; i < count/(9*JumlahByte); i += 1){
                         if ((datas & 1)==1){
 //                            Log.e("IDX", "newMethod: b "+getSinus(iSample));
-                            samples[idx] = getSinus(iSample);
-                            samples[idx + 1] = getSinus(iSample);
-                        }else{
                             samples[idx] = (byte)0;
                             samples[idx + 1] = (byte) 0;
+                        }else{
+                            samples[idx] = getSinus(iSample);
+                            samples[idx + 1] = getSinus(iSample);
                         }
                         iSample++;
                         idx+=2;
@@ -181,9 +181,10 @@ public class IrController {
                     datas = (byte) (datas >> (byte)1);
                 }
                 for(int i = 0; i < count/(JumlahByte); i += 1){
-//                    Log.e("IDX", "newMethod: c "+getSinus(iSample));
-                    samples[idx] = getSinus(iSample);
-                    samples[idx + 1] = getSinus(iSample);
+//                    samples[idx] = getSinus(iSample);
+//                    samples[idx + 1] = getSinus(iSample);
+                    samples[idx] = (byte)0;
+                    samples[idx + 1] = (byte) 0;
                     iSample++;
                     idx+=2;
                 }

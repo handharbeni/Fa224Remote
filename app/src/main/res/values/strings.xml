@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LiTron Remote</string>
+    <string name="app_name">FA-224 Remote</string>
     <string-array name="jam">
         <item>00</item>
         <item>01</item>

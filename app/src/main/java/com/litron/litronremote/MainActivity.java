@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sharedPreferences = getSharedPreferences("LITRONRemote", Context.MODE_PRIVATE);
-        initPermission();
+//        initPermission();
         audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
 
 
@@ -214,7 +214,8 @@ public class MainActivity extends AppCompatActivity {
                     (byte) a[7],
                     (byte) a[8]
             };
-            new Handler().post(() -> ir.newMethod(datas));
+            ir.newMethod(datas);
+//            new Handler().post(() -> );
 //            new Handler().postDelayed(() -> ir.newMethod(datas, true), 600);
 //            ir.sendUsingAudio(datas);
         }
@@ -261,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= 23) {
             boolean retVal = Settings.System.canWrite(this);
             if (retVal){
-                initPutarLayar();
+//                initPutarLayar();
             }else{
                 Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
                 intent.setData(Uri.parse("package:" + getPackageName()));
@@ -307,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(TAG, "onActivityResult: "+requestCode);
         if (requestCode == 102){
-            initPutarLayar();
+//            initPutarLayar();
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
