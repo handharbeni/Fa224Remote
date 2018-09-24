@@ -1,96 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_width="match_parent" android:layout_height="match_parent"
     xmlns:android="http://schemas.android.com/apk/res/android">
-    <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    <ScrollView xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".MainActivity">
-
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="200dp"
-            android:layout_height="75dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="32dp"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_wireless"
-            tools:ignore="VectorDrawableCompat" />
-
-        <LinearLayout
-            android:gravity="center"
-            android:id="@+id/includeLayout"
-            app:layout_constraintTop_toBottomOf="@id/imageView"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        xmlns:android="http://schemas.android.com/apk/res/android">
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-            <include
-                android:layout_margin="15dp"
-                android:id="@+id/etWaktuOn"
-                layout="@layout/et_waktuon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAlignment="center"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
-            <include
-                android:layout_margin="15dp"
-                android:id="@+id/etWaktuOff"
-                layout="@layout/et_waktuoff"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                tools:layout_editor_absoluteY="341dp" />
+            <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_alignParentTop="true"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:context=".MainActivity">
 
-        </LinearLayout>
+                <ImageView
+                    android:id="@+id/imageView"
+                    android:layout_width="200dp"
+                    android:layout_height="75dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="32dp"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/ic_wireless"
+                    tools:ignore="VectorDrawableCompat"
+                    android:contentDescription="TODO" />
+
+                <LinearLayout
+                    android:gravity="center"
+                    android:id="@+id/includeLayout"
+                    app:layout_constraintTop_toBottomOf="@id/imageView"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <include
+                        android:layout_margin="15dp"
+                        android:id="@+id/etWaktuOn"
+                        layout="@layout/et_waktuon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAlignment="center"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+
+                    <include
+                        android:layout_margin="15dp"
+                        android:id="@+id/etWaktuOff"
+                        layout="@layout/et_waktuoff"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        tools:layout_editor_absoluteY="341dp" />
+
+                </LinearLayout>
 
 
-        <include
-            app:layout_constraintTop_toBottomOf="@id/includeLayout"
-            android:id="@+id/include"
-            layout="@layout/switch_ir"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            tools:layout_editor_absoluteY="504dp" />
+                <include
+                    app:layout_constraintTop_toBottomOf="@id/includeLayout"
+                    android:id="@+id/include"
+                    layout="@layout/switch_ir"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_marginStart="8dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    tools:layout_editor_absoluteY="504dp" />
 
-        <android.support.v7.widget.AppCompatButton
-            android:id="@+id/btnKirim"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="24dp"
-            android:text="SEND"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/include" />
+                <android.support.v7.widget.AppCompatButton
+                    android:id="@+id/btnKirim"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="24dp"
+                    android:text="SEND"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/include" />
 
-        <android.support.v7.widget.AppCompatButton
-            android:visibility="gone"
-            android:id="@+id/testSound"
-            android:text="Test Button Sound"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-    </android.support.constraint.ConstraintLayout>
-</ScrollView>
+                <android.support.v7.widget.AppCompatButton
+                    android:visibility="gone"
+                    android:id="@+id/testSound"
+                    android:text="Test Button Sound"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </android.support.constraint.ConstraintLayout>
+        </RelativeLayout>
+    </ScrollView>
+    <com.google.android.gms.ads.AdView
+        xmlns:ads="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/adView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        ads:adSize="SMART_BANNER"
+        ads:adUnitId="ca-app-pub-6979523679704477/1079353317">
+    </com.google.android.gms.ads.AdView>
+</RelativeLayout>

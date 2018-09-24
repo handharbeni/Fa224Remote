@@ -10,6 +10,10 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.crashlytics.android.Crashlytics;
+
+import io.fabric.sdk.android.Fabric;
+
 public class IrController {
 
     private ConsumerIrManager irService;
@@ -21,6 +25,8 @@ public class IrController {
 
 
     IrController(Context context) {
+        Fabric.with(context, new Crashlytics());
+
         mContext = context;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             irService = (ConsumerIrManager) context.getSystemService(Context.CONSUMER_IR_SERVICE);
@@ -158,6 +164,13 @@ public class IrController {
             int idx = 0;
             int iSample = 1;
             for (byte datas : data){
+                for(int k = 0; k < (count/(9*JumlahByte))*4; k += 1){
+//                    Log.e("IDX", "newMethod: a "+getSinus(iSample));
+                    samples[idx] = (byte)0;
+                    samples[idx + 1] = (byte) 0;
+                    iSample++;
+                    idx+=2;
+                }
                 for(int k = 0; k < count/(9*JumlahByte); k += 1){
 //                    Log.e("IDX", "newMethod: a "+getSinus(iSample));
                     samples[idx] = getSinus(iSample);

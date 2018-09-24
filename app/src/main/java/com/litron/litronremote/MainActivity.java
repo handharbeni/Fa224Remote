@@ -20,6 +20,11 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.aigestudio.wheelpicker.WheelPicker;
+import com.crashlytics.android.Crashlytics;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.suke.widget.SwitchButton;
 
 import java.util.Arrays;
@@ -30,8 +35,14 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.fabric.sdk.android.Fabric;
 
 public class MainActivity extends AppCompatActivity {
+    private static String ADS_APP_ID = "ca-app-pub-6979523679704477~8016474368";
+    private static String ADS_UNIT_ID = "ca-app-pub-6979523679704477/1079353317";
+
+    private AdView mAdView;
+
     private static final String TAG = MainActivity.class.getSimpleName();
     private IrController ir;
 
@@ -127,6 +138,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Fabric.with(this, new Crashlytics());
+
         sharedPreferences = getSharedPreferences("LITRONRemote", Context.MODE_PRIVATE);
 //        initPermission();
         audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
@@ -135,8 +149,28 @@ public class MainActivity extends AppCompatActivity {
         ir = new IrController(this);
 
         setContentView(R.layout.second_layout);
+
+
+
         ButterKnife.bind(this);
 
+        MobileAds.initialize(this, ADS_APP_ID);
+        mAdView = findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+        mAdView.setAdListener(new AdListener(){
+            @Override
+            public void onAdFailedToLoad(int i) {
+                Log.d(TAG, "onAdFailedToLoad: ");
+                super.onAdFailedToLoad(i);
+            }
+
+            @Override
+            public void onAdClosed() {
+                Log.d(TAG, "onAdClosed: ");
+                super.onAdClosed();
+            }
+        });
 
         initDataShared();
     }
@@ -224,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
             adjustVolume(false);
             btnKirim.setEnabled(true);
             btnKirim.setText("SEND");
-        }, 1000);
+        }, 1500);
     }
 
     public void showBantuan(){
