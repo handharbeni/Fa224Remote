@@ -151,7 +151,7 @@ public class IrController {
         return j;
     }
 
-    private byte JumlahByte = 35;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum = 15byte(8 data + 6 jeda)
+    private byte JumlahByte = 40;   //0xAA,jeda,jam,jeda,menit,jeda....ceksum = 15byte(8 data + 6 jeda)
     private int SampleRate = 44100;
     private double freqHz = 5000;
     private int durationuS = 3333;
@@ -163,16 +163,20 @@ public class IrController {
             byte[] samples = new byte[count * 2];
             int idx = 0;
             int iSample = 1;
+            for(int k = 0; k < (count/(JumlahByte)); k += 1){
+                samples[idx] = getSinus(iSample);
+                samples[idx + 1] = getSinus(iSample);
+                iSample++;
+                idx+=2;
+            }
+            for(int k = 0; k < (count/(JumlahByte)); k += 1){
+                samples[idx] = (byte) 0;
+                samples[idx + 1] = (byte) 0;
+                iSample++;
+                idx+=2;
+            }
             for (byte datas : data){
-                for(int k = 0; k < (count/(9*JumlahByte))*4; k += 1){
-//                    Log.e("IDX", "newMethod: a "+getSinus(iSample));
-                    samples[idx] = (byte)0;
-                    samples[idx + 1] = (byte) 0;
-                    iSample++;
-                    idx+=2;
-                }
                 for(int k = 0; k < count/(9*JumlahByte); k += 1){
-//                    Log.e("IDX", "newMethod: a "+getSinus(iSample));
                     samples[idx] = getSinus(iSample);
                     samples[idx + 1] = getSinus(iSample);
                     iSample++;
@@ -181,7 +185,6 @@ public class IrController {
                 for (int j=0;j<8;j++){
                     for(int i = 0; i < count/(9*JumlahByte); i += 1){
                         if ((datas & 1)==1){
-//                            Log.e("IDX", "newMethod: b "+getSinus(iSample));
                             samples[idx] = (byte)0;
                             samples[idx + 1] = (byte) 0;
                         }else{
@@ -194,8 +197,6 @@ public class IrController {
                     datas = (byte) (datas >> (byte)1);
                 }
                 for(int i = 0; i < count/(JumlahByte); i += 1){
-//                    samples[idx] = getSinus(iSample);
-//                    samples[idx + 1] = getSinus(iSample);
                     samples[idx] = (byte)0;
                     samples[idx + 1] = (byte) 0;
                     iSample++;
