@@ -5,6 +5,7 @@ import android.hardware.ConsumerIrManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.media.VolumeShaper;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -157,6 +158,7 @@ public class IrController {
     private int durationuS = 3333;
     private byte JumlahBit = 9;
     private byte bit = (byte) 0x7F;
+    private static byte diam = ~127;
     public void newMethod(byte[] data){
         try{
             int count = ((int)(((2.0 * 44100.0 * (durationuS / 1000000.0))*JumlahBit)*JumlahByte) & ~1);
@@ -170,8 +172,8 @@ public class IrController {
                 idx+=2;
             }
             for(int k = 0; k < (count/(JumlahByte)); k += 1){
-                samples[idx] = (byte) 0;
-                samples[idx + 1] = (byte) 0;
+                samples[idx] = diam;
+                samples[idx + 1] = diam;
                 iSample++;
                 idx+=2;
             }
@@ -185,8 +187,8 @@ public class IrController {
                 for (int j=0;j<8;j++){
                     for(int i = 0; i < count/(9*JumlahByte); i += 1){
                         if ((datas & 1)==1){
-                            samples[idx] = (byte)0;
-                            samples[idx + 1] = (byte) 0;
+                            samples[idx] = diam;
+                            samples[idx + 1] = diam;
                         }else{
                             samples[idx] = getSinus(iSample);
                             samples[idx + 1] = getSinus(iSample);
@@ -197,19 +199,29 @@ public class IrController {
                     datas = (byte) (datas >> (byte)1);
                 }
                 for(int i = 0; i < count/(JumlahByte); i += 1){
-                    samples[idx] = (byte)0;
-                    samples[idx + 1] = (byte) 0;
+                    samples[idx] = diam;
+                    samples[idx + 1] = diam;
                     iSample++;
                     idx+=2;
                 }
             }
+
             AudioTrack track = new AudioTrack(AudioManager.STREAM_MUSIC, SampleRate,
                     AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT,
                     count, AudioTrack.MODE_STATIC);
+
+//            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+//                VolumeShaper.Configuration config =
+//                        new VolumeShaper.Configuration.Builder()
+//                                .setInterpolatorType(VolumeShaper.Configuration.INTERPOLATOR_TYPE_LINEAR)
+//                                .build();
+//                track.createVolumeShaper(config);
+//            }
+
             track.write(samples, 0, count);
             track.play();
         }catch (IllegalStateException e){
-            Toast.makeText(mContext, "Audio Belum Siap, Restart Aplikasi..", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, "Audio Stack, Restart Aplikasi..", Toast.LENGTH_SHORT).show();
         }
     }
 
