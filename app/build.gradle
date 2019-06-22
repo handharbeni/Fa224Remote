@@ -6,7 +6,7 @@ android {
         config {
             keyAlias 'keyrelease'
             keyPassword 'nollimakali'
-            storeFile file('/home/mhandharbeni/Documents/AndroidProject/SELF/LiTronRemote/keystore.jks')
+            storeFile file('/home/mhandharbeni/Documents/PROJECT/ANDROID/LiTronRemote/keystore.jks')
             storePassword 'nollimakali'
         }
     }
