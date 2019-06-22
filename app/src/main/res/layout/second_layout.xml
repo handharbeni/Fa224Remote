@@ -67,6 +67,7 @@
 
 
                 <include
+                    android:visibility="gone"
                     app:layout_constraintTop_toBottomOf="@id/includeLayout"
                     android:id="@+id/include"
                     layout="@layout/switch_ir"

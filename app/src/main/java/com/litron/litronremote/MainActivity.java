@@ -1,22 +1,32 @@
 package com.litron.litronremote;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatButton;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.aigestudio.wheelpicker.WheelPicker;
@@ -27,10 +37,14 @@ import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
 import com.suke.widget.SwitchButton;
 
+import java.lang.ref.WeakReference;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -38,6 +52,45 @@ import butterknife.OnClick;
 import io.fabric.sdk.android.Fabric;
 
 public class MainActivity extends AppCompatActivity {
+
+
+
+    private boolean isConnected = false;
+    /*
+     * Notifications from UsbService will be received here.
+     */
+    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                    isConnected = true;
+                    initPutarLayar();
+                    Toast.makeText(context, "USB Ready", Toast.LENGTH_SHORT).show();
+//                    usbService.changeBaudRate(230400);
+                    break;
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                    isConnected = false;
+                    Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
+                    break;
+                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                    isConnected = false;
+                    Toast.makeText(context, "No USB connected", Toast.LENGTH_SHORT).show();
+                    break;
+                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                    isConnected = false;
+                    Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
+                    break;
+                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
+                    isConnected = false;
+                    Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        }
+    };
+    private UsbService usbService;
+    private MyHandler mHandler;
+
     private static String ADS_APP_ID = "ca-app-pub-6979523679704477~8016474368";
     private static String ADS_UNIT_ID = "ca-app-pub-6979523679704477/1079353317";
 
@@ -86,55 +139,59 @@ public class MainActivity extends AppCompatActivity {
 
     private AudioManager audioManager;
 
+    private final ServiceConnection usbConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName arg0, IBinder arg1) {
+            usbService = ((UsbService.UsbBinder) arg1).getService();
+            usbService.setHandler(mHandler);
+        }
 
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            usbService = null;
+        }
+    };
+    public String toHex(String arg) {
+        return String.format("%040x", new BigInteger(1, arg.getBytes(Charset.defaultCharset())));
+    }
     public String getsWaktuOn() {
         return sharedPreferences.getString(S_WAKTU_ON, "17:59");
     }
-
     public void setsWaktuOn(String sWaktuOn) {
         editor = sharedPreferences.edit();
         editor.putString(S_WAKTU_ON, sWaktuOn);
         editor.apply();
     }
-
     public String getsWaktuOff() {
         return sharedPreferences.getString(S_WAKTU_OFF, "04:59");
     }
-
     public void setsWaktuOff(String sWaktuOff) {
         editor = sharedPreferences.edit();
         editor.putString(S_WAKTU_OFF, sWaktuOff);
         editor.apply();
     }
-
     public boolean getSwitchButton(){
         return sharedPreferences.getBoolean(S_SWITCH_BUTTON, false);
     }
-
     public void setsSwitchButton(boolean switchButton){
         editor = sharedPreferences.edit();
         editor.putBoolean(S_SWITCH_BUTTON, switchButton);
         editor.apply();
     }
-
     private void setPutarLayar(int putarLayar){
         editor = sharedPreferences.edit();
         editor.putInt(LabelPutarLayar, putarLayar);
         editor.apply();
     }
-
     private int getPutarLayar(){
         return sharedPreferences.getInt(LabelPutarLayar, 0);
     }
-
     private List<String> getListJam(){
         return Arrays.asList(getResources().getStringArray(R.array.jam));
     }
-
     private List<String> getListMenit(){
         return Arrays.asList(getResources().getStringArray(R.array.menit));
     }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -149,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
         ir = new IrController(this);
 
         setContentView(R.layout.second_layout);
+        mHandler = new MyHandler(this);
 
 
 
@@ -171,10 +229,8 @@ public class MainActivity extends AppCompatActivity {
                 super.onAdClosed();
             }
         });
-
         initDataShared();
     }
-
     private void initDataShared(){
         JamOn.setData(getListJam());
         JamOn.setSelectedItemPosition(getListJam().indexOf(getsWaktuOn().split(":")[0].length()==1?"0"+getsWaktuOn().split(":")[0]:getsWaktuOn().split(":")[0]));
@@ -192,7 +248,6 @@ public class MainActivity extends AppCompatActivity {
 
         choose_ir.setOnCheckedChangeListener((view, isChecked) -> setsSwitchButton(isChecked));
     }
-
     @OnClick(R.id.btnKirim)
     public void kirimData(){
         Date currentTime = Calendar.getInstance().getTime();
@@ -211,33 +266,47 @@ public class MainActivity extends AppCompatActivity {
 
         setsWaktuOff(HourOff+":"+MinuteOff);
 
-        btnKirim.setText("MENGIRIM DATA");
-        btnKirim.setEnabled(false);
+//        btnKirim.setText("MENGIRIM DATA");
+//        btnKirim.setEnabled(false);
 
         assert audioManager != null;
         max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
         int[] d = new int[]{170, HourNow, MinuteNow, SecondNow, HourOn, MinuteOn, HourOff, MinuteOff};
-        byte sum = 0;
-        int count = 0;
-        for (int i: d){
-            a[count] = i;
-            sum += (byte)i;
-            count++;
-        }
-        a[8] = ~sum;
-        if (choose_ir.isChecked()){
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                ir.sendCode(a);
-            }else{
-                choose_ir.toggle();
-                Toast.makeText(this, "Not Support Operating System, Please Using IR External", Toast.LENGTH_SHORT).show();
-            }
-        }else{
-            adjustVolume(true);
 
-            byte[] datas = new byte[]{
+        new DoinBackground().execute(d);
+
+//        mHandler.postDelayed(() -> {
+//            adjustVolume(false);
+//            btnKirim.setEnabled(true);
+//            btnKirim.setText("SEND");
+//        }, 1500);
+
+//        new Handler()
+    }
+
+    private class DoinBackground extends AsyncTask<int[], Integer, Boolean>{
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            btnKirim.setEnabled(false);
+            btnKirim.setText("Mengirim Data");
+        }
+
+        @Override
+        protected Boolean doInBackground(int[]... data) {
+            int[] d = data[0];
+            byte sum = 0;
+            int count = 0;
+            for (int i: d){
+                a[count] = i;
+                sum += (byte)i;
+                count++;
+            }
+            a[8] = ~sum;
+            byte[] newData = getData(new byte[]{
                     (byte) a[0],
                     (byte) a[1],
                     (byte) a[2],
@@ -247,20 +316,99 @@ public class MainActivity extends AppCompatActivity {
                     (byte) a[6],
                     (byte) a[7],
                     (byte) a[8]
-            };
-            ir.newMethod(datas);
-//            new Handler().post(() -> );
-//            new Handler().postDelayed(() -> ir.newMethod(datas, true), 600);
-//            ir.sendUsingAudio(datas);
+            });
+            if (isConnected) { // if UsbService was correctly binded, Send data
+//                mHandler.post(() -> {
+                usbService.changeBaudRate(230400);
+                usbService.write(newData);
+//                });
+            }else{
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    ir.sendCode(a);
+                }else{
+                    Toast.makeText(getApplicationContext(), "Not Support Operating System, Please Using OTG", Toast.LENGTH_SHORT).show();
+                }
+            }
+            return true;
         }
 
-        new Handler().postDelayed(() -> {
-            adjustVolume(false);
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
             btnKirim.setEnabled(true);
             btnKirim.setText("SEND");
-        }, 1500);
+        }
     }
 
+    public static byte DATA_HIGH = (byte) 85;
+    public static byte DATA_LOW = (byte) 158;
+    public static int PANJANG_BIT = 73;
+    public static int LENGTH_DATA = PANJANG_BIT * 9;
+
+    public byte[] getData(byte[] bytes){
+        byte[] output = new byte[(LENGTH_DATA)*18];
+        int i=0;
+        int j=0;
+        for (byte b : bytes){
+            /*
+             * Start
+             * */
+            for (int start=0;start<PANJANG_BIT;start++){
+                output[i] = DATA_LOW;
+                Log.d("DATA", "getData: i "+i+" output "+DATA_LOW);
+                i++;
+            }
+
+            /*
+             * Data 1 byte
+             * */
+
+            boolean[] bArray = getBinary(b);
+            for (boolean val : bArray){
+                if (val){
+                    /*
+                     * High
+                     * */
+                    for (int start=0;start<PANJANG_BIT;start++){
+                        Log.d("DATA", "getData: i "+i+" output "+DATA_HIGH);
+                        output[i] = DATA_HIGH;
+                        i++;
+                    }
+
+                }else{
+                    for (int start=0;start<PANJANG_BIT;start++){
+                        Log.d("DATA", "getData: i "+i+" output "+DATA_LOW);
+                        output[i] = DATA_LOW;
+                        i++;
+                    }
+                }
+            }
+            /*
+             * jeda
+             * */
+            if (j<8){
+                for (int jeda=0;jeda<8;jeda++){
+                    for (int start=0;start<PANJANG_BIT;start++){
+                        output[i] = DATA_HIGH;
+                        Log.d("DATA", "getData: i "+i+" output "+DATA_HIGH);
+
+                        i++;
+                    }
+                }
+            }
+            j++;
+        }
+        return output;
+    }
+
+    public boolean[] getBinary(int input){
+        boolean[] bits = new boolean[8];
+        for (int i = 7; i >= 0; i--) {
+            bits[i] = (input & (1 << i)) != 0;
+        }
+        Log.d("DATA", "getBinary: "+input + " = " + Arrays.toString(bits));
+        return bits;
+    }
     public void showBantuan(){
         Intent i = new Intent(this,BantuanActivity.class);
         startActivity(i);
@@ -304,7 +452,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
     private void buildDialog(){
         builder = new AlertDialog.Builder(getWindow().getContext());
         builder.setCancelable(false);
@@ -319,11 +466,9 @@ public class MainActivity extends AppCompatActivity {
         });
         alertDialog = builder.create();
     }
-
     private void showDialog(){
         alertDialog.show();
     }
-
     private void initPutarLayar(){
         if (getPutarLayar() == 0){
             doPutarLayar(0);
@@ -337,7 +482,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(TAG, "onActivityResult: "+requestCode);
@@ -346,15 +490,14 @@ public class MainActivity extends AppCompatActivity {
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
-
     private void doPutarLayar(int code){
         boolean retVal = false;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             retVal = Settings.System.canWrite(this);
             if (retVal){
                 Log.d(TAG, "doPutarLayar: "+code);
-                Handler handler = new Handler();
-                handler.post(() -> Settings.System.putInt(getContentResolver(), Settings.System.USER_ROTATION, code));
+//                Handler handler = new Handler();
+                mHandler.post(() -> Settings.System.putInt(getContentResolver(), Settings.System.USER_ROTATION, code));
             }
         }
     }
@@ -373,23 +516,75 @@ public class MainActivity extends AppCompatActivity {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, current, AudioManager.FLAG_VIBRATE);
         }
     }
-
     @Override
     protected void onResume() {
         super.onResume();
 //        initPutarLayar();
-    }
 
+        setFilters();  // Start listening notifications from UsbService
+        startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
+    }
     @Override
     protected void onPause() {
         doPutarLayar(0);
         super.onPause();
+        unregisterReceiver(mUsbReceiver);
+        unbindService(usbConnection);
     }
-
     @Override
     protected void onDestroy() {
         doPutarLayar(0);
         super.onDestroy();
     }
+    private static class MyHandler extends Handler {
+        private final WeakReference<MainActivity> mActivity;
 
+        public MyHandler(MainActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UsbService.MESSAGE_FROM_SERIAL_PORT:
+                    String data = (String) msg.obj;
+                    break;
+                case UsbService.CTS_CHANGE:
+                    Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
+                    break;
+                case UsbService.DSR_CHANGE:
+                    Toast.makeText(mActivity.get(), "DSR_CHANGE",Toast.LENGTH_LONG).show();
+                    break;
+                case UsbService.SYNC_READ:
+                    String buffer = (String) msg.obj;
+                    break;
+            }
+        }
+    }
+
+    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
+        if (!UsbService.SERVICE_CONNECTED) {
+            Intent startService = new Intent(this, service);
+            if (extras != null && !extras.isEmpty()) {
+                Set<String> keys = extras.keySet();
+                for (String key : keys) {
+                    String extra = extras.getString(key);
+                    startService.putExtra(key, extra);
+                }
+            }
+            startService(startService);
+        }
+        Intent bindingIntent = new Intent(this, service);
+        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void setFilters() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
+        filter.addAction(UsbService.ACTION_NO_USB);
+        filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
+        filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
+        registerReceiver(mUsbReceiver, filter);
+    }
 }

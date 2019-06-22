@@ -10,6 +10,7 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/infrared-release" />
+            <option value="$PROJECT_DIR$/usbserial-6.0.6-debug" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
