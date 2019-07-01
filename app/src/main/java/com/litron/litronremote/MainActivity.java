@@ -1,5 +1,6 @@
 package com.litron.litronremote;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -8,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -24,6 +26,8 @@ import android.support.v7.widget.AppCompatButton;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -40,6 +44,7 @@ import com.suke.widget.SwitchButton;
 import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -50,6 +55,11 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.fabric.sdk.android.Fabric;
+import me.weyye.hipermission.HiPermission;
+import me.weyye.hipermission.PermissionCallback;
+import me.weyye.hipermission.PermissionItem;
+
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -71,18 +81,22 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
                     isConnected = false;
+                    doPutarLayar(0);
                     Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
                     break;
                 case UsbService.ACTION_NO_USB: // NO USB CONNECTED
                     isConnected = false;
+                    doPutarLayar(0);
                     Toast.makeText(context, "No USB connected", Toast.LENGTH_SHORT).show();
                     break;
                 case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
                     isConnected = false;
+                    doPutarLayar(0);
                     Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
                     break;
                 case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
                     isConnected = false;
+                    doPutarLayar(0);
                     Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
                     break;
             }
@@ -230,6 +244,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         initDataShared();
+        initPermission();
     }
     private void initDataShared(){
         JamOn.setData(getListJam());
@@ -433,14 +448,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
     private void initPermission(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED){
-//                requestPermissions(
-//                        new String[]{Manifest.permission.CAMERA,
-//                                Manifest.permission.TRANSMIT_IR
-//                        }, 1);
-//            }
-        }
         if (Build.VERSION.SDK_INT >= 23) {
             boolean retVal = Settings.System.canWrite(this);
             if (retVal){
@@ -470,23 +477,13 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.show();
     }
     private void initPutarLayar(){
-        if (getPutarLayar() == 0){
-            doPutarLayar(0);
-            buildDialog();
-            showDialog();
-        }else{
-            if (getPutarLayar() == 1){
-                doPutarLayar(2);
-            }else if (getPutarLayar() == 2){
-                doPutarLayar(0);
-            }
-        }
+        doPutarLayar(2);
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(TAG, "onActivityResult: "+requestCode);
         if (requestCode == 102){
-//            initPutarLayar();
+            initPutarLayar();
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -499,6 +496,8 @@ public class MainActivity extends AppCompatActivity {
 //                Handler handler = new Handler();
                 mHandler.post(() -> Settings.System.putInt(getContentResolver(), Settings.System.USER_ROTATION, code));
             }
+        }else{
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
         }
     }
     private void adjustVolume(boolean isPlay){
@@ -519,7 +518,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-//        initPutarLayar();
+        initPutarLayar();
 
         setFilters();  // Start listening notifications from UsbService
         startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
@@ -586,5 +585,17 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
         filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
         registerReceiver(mUsbReceiver, filter);
+    }
+
+    @Override
+    public void setRequestedOrientation(int requestedOrientation) {
+        super.setRequestedOrientation(requestedOrientation);
+
+        Window win = getWindow();
+        WindowManager.LayoutParams winParams = win.getAttributes();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            winParams.rotationAnimation = WindowManager.LayoutParams.ROTATION_ANIMATION_JUMPCUT;
+        }
+        win.setAttributes(winParams);
     }
 }
