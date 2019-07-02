@@ -1,6 +1,7 @@
 package com.litron.litronremote;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -20,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PersistableBundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatButton;
@@ -39,6 +41,7 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
+import com.google.android.things.pio.PeripheralManager;
 import com.suke.widget.SwitchButton;
 
 import java.lang.ref.WeakReference;
@@ -209,11 +212,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Fabric.with(this, new Crashlytics());
 
         sharedPreferences = getSharedPreferences("LITRONRemote", Context.MODE_PRIVATE);
-//        initPermission();
         audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
 
 
@@ -226,23 +227,6 @@ public class MainActivity extends AppCompatActivity {
 
         ButterKnife.bind(this);
 
-        MobileAds.initialize(this, ADS_APP_ID);
-        mAdView = findViewById(R.id.adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
-        mAdView.setAdListener(new AdListener(){
-            @Override
-            public void onAdFailedToLoad(int i) {
-                Log.d(TAG, "onAdFailedToLoad: ");
-                super.onAdFailedToLoad(i);
-            }
-
-            @Override
-            public void onAdClosed() {
-                Log.d(TAG, "onAdClosed: ");
-                super.onAdClosed();
-            }
-        });
         initDataShared();
         initPermission();
     }
@@ -281,9 +265,6 @@ public class MainActivity extends AppCompatActivity {
 
         setsWaktuOff(HourOff+":"+MinuteOff);
 
-//        btnKirim.setText("MENGIRIM DATA");
-//        btnKirim.setEnabled(false);
-
         assert audioManager != null;
         max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -291,16 +272,9 @@ public class MainActivity extends AppCompatActivity {
         int[] d = new int[]{170, HourNow, MinuteNow, SecondNow, HourOn, MinuteOn, HourOff, MinuteOff};
 
         new DoinBackground().execute(d);
-
-//        mHandler.postDelayed(() -> {
-//            adjustVolume(false);
-//            btnKirim.setEnabled(true);
-//            btnKirim.setText("SEND");
-//        }, 1500);
-
-//        new Handler()
     }
 
+    @SuppressLint("StaticFieldLeak")
     private class DoinBackground extends AsyncTask<int[], Integer, Boolean>{
 
         @Override
@@ -370,7 +344,6 @@ public class MainActivity extends AppCompatActivity {
              * */
             for (int start=0;start<PANJANG_BIT;start++){
                 output[i] = DATA_LOW;
-                Log.d("DATA", "getData: i "+i+" output "+DATA_LOW);
                 i++;
             }
 
@@ -385,14 +358,12 @@ public class MainActivity extends AppCompatActivity {
                      * High
                      * */
                     for (int start=0;start<PANJANG_BIT;start++){
-                        Log.d("DATA", "getData: i "+i+" output "+DATA_HIGH);
                         output[i] = DATA_HIGH;
                         i++;
                     }
 
                 }else{
                     for (int start=0;start<PANJANG_BIT;start++){
-                        Log.d("DATA", "getData: i "+i+" output "+DATA_LOW);
                         output[i] = DATA_LOW;
                         i++;
                     }
@@ -405,8 +376,6 @@ public class MainActivity extends AppCompatActivity {
                 for (int jeda=0;jeda<8;jeda++){
                     for (int start=0;start<PANJANG_BIT;start++){
                         output[i] = DATA_HIGH;
-                        Log.d("DATA", "getData: i "+i+" output "+DATA_HIGH);
-
                         i++;
                     }
                 }
@@ -421,7 +390,6 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 7; i >= 0; i--) {
             bits[i] = (input & (1 << i)) != 0;
         }
-        Log.d("DATA", "getBinary: "+input + " = " + Arrays.toString(bits));
         return bits;
     }
     public void showBantuan(){
@@ -481,7 +449,6 @@ public class MainActivity extends AppCompatActivity {
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.d(TAG, "onActivityResult: "+requestCode);
         if (requestCode == 102){
             initPutarLayar();
         }
@@ -492,18 +459,27 @@ public class MainActivity extends AppCompatActivity {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             retVal = Settings.System.canWrite(this);
             if (retVal){
-                Log.d(TAG, "doPutarLayar: "+code);
 //                Handler handler = new Handler();
                 mHandler.post(() -> Settings.System.putInt(getContentResolver(), Settings.System.USER_ROTATION, code));
             }
         }else{
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
         }
+
     }
+
+    private void checkUart(){
+//        PeripheralManager manager = PeripheralManager.getInstance();
+//        List<String> deviceList = manager.getUartDeviceList();
+//        if (deviceList.isEmpty()) {
+//            Log.i(TAG, "No UART port available on this device.");
+//        } else {
+//            Log.i(TAG, "List of available devices: " + deviceList);
+//        }
+    }
+
     private void adjustVolume(boolean isPlay){
 //        audioManager.setSpeakerphoneOn(true);
-        Log.d(TAG, "adjustVolume: Max "+max);
-        Log.d(TAG, "adjustVolume: Current "+current);
         if (isPlay){
             if (current > (audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)/2)){
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), AudioManager.FLAG_VIBRATE);
@@ -515,26 +491,51 @@ public class MainActivity extends AppCompatActivity {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, current, AudioManager.FLAG_VIBRATE);
         }
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        initPutarLayar();
+
+        setFilters();
+        startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         initPutarLayar();
 
-        setFilters();  // Start listening notifications from UsbService
+        setFilters();
         startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
     }
+
+
     @Override
     protected void onPause() {
         doPutarLayar(0);
         super.onPause();
-        unregisterReceiver(mUsbReceiver);
-        unbindService(usbConnection);
+        try {
+            unregisterReceiver(mUsbReceiver);
+            unbindService(usbConnection);
+        }catch (Exception ignored){}
     }
     @Override
     protected void onDestroy() {
         doPutarLayar(0);
         super.onDestroy();
     }
+
+    @Override
+    public void onBackPressed() {
+        if (isConnected) {
+            Toast.makeText(this, "Lepas OTG Lebih Dahulu", Toast.LENGTH_SHORT).show();
+        }else{
+            super.onBackPressed();
+            return;
+        }
+    }
+
     private static class MyHandler extends Handler {
         private final WeakReference<MainActivity> mActivity;
 
@@ -597,5 +598,15 @@ public class MainActivity extends AppCompatActivity {
             winParams.rotationAnimation = WindowManager.LayoutParams.ROTATION_ANIMATION_JUMPCUT;
         }
         win.setAttributes(winParams);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
     }
 }
