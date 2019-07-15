@@ -15,8 +15,8 @@ android {
         applicationId "com.litron.litronremote"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 4
-        versionName "1.4"
+        versionCode 6
+        versionName "2.0"
         vectorDrawables.useSupportLibrary = true
         signingConfig signingConfigs.config
     }
@@ -51,6 +51,5 @@ dependencies {
     implementation project(":usbserial-6.0.6-debug")
     implementation 'me.weyye.hipermission:library:1.0.7'
     implementation 'com.google.android.things:androidthings:1.0'
-
 }
 apply plugin: 'com.google.gms.google-services'
