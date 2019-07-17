@@ -5,10 +5,8 @@ import android.hardware.ConsumerIrManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.VolumeShaper;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.crashlytics.android.Crashlytics;

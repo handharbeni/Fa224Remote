@@ -478,19 +478,7 @@ public class MainActivity extends AppCompatActivity {
 //        }
     }
 
-    private void adjustVolume(boolean isPlay){
-//        audioManager.setSpeakerphoneOn(true);
-        if (isPlay){
-            if (current > (audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)/2)){
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), AudioManager.FLAG_VIBRATE);
-            }else{
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)/2)-1, AudioManager.FLAG_VIBRATE);
-            }
-//            audioManager.setSpeakerphoneOn(false);
-        }else{
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, current, AudioManager.FLAG_VIBRATE);
-        }
-    }
+
 
     @Override
     protected void onStart() {
