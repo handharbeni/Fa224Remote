@@ -32,6 +32,10 @@ public class IrController {
         }
     }
 
+    public boolean haveEmitter(){
+        return irService.hasIrEmitter();
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void sendCode(int[] code) {
         if (irService.hasIrEmitter()){

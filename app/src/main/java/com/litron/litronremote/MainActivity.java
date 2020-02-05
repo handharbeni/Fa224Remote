@@ -79,28 +79,43 @@ public class MainActivity extends AppCompatActivity {
                 case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
                     isConnected = true;
                     initPutarLayar();
-                    Toast.makeText(context, "USB Ready", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "OTG Siap", Toast.LENGTH_SHORT).show();
+//                    statusIr.setText("OTG Siap");
+                    statusIr.setText("Mode : IR OTG");
 //                    usbService.changeBaudRate(230400);
                     break;
                 case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
                     isConnected = false;
                     doPutarLayar(0);
-                    Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "Tidak bisa mendapatkan ijin untuk OTG", Toast.LENGTH_SHORT).show();
+                    statusIr.setText("Tidak bisa mendapatkan ijin untuk OTG");
                     break;
                 case UsbService.ACTION_NO_USB: // NO USB CONNECTED
                     isConnected = false;
                     doPutarLayar(0);
-                    Toast.makeText(context, "No USB connected", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "Tidak Ada OTG yang terpasang. jika sudah terpasang, Coba lepas lalu pasang kembali", Toast.LENGTH_SHORT).show();
+                    if (ir.haveEmitter()){
+                        statusIr.setText("Mode : IR Internal");
+                    }else{
+                        statusIr.setText("Tidak Ada OTG yang terpasang. jika sudah terpasang, Coba lepas lalu pasang kembali");
+                    }
                     break;
                 case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
                     isConnected = false;
                     doPutarLayar(0);
-                    Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "OTG Terlepas", Toast.LENGTH_SHORT).show();
+                    statusIr.setText("OTG Terlepas");
+                    if (ir.haveEmitter()){
+                        statusIr.setText("Mode : IR Internal");
+                    }else{
+                        statusIr.setText("Tidak terdapat IR Internal ataupun External");
+                    }
                     break;
                 case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
                     isConnected = false;
                     doPutarLayar(0);
-                    Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "OTG tidak mendukung", Toast.LENGTH_SHORT).show();
+                    statusIr.setText("OTG Tidak Mendukung");
                     break;
             }
         }
@@ -143,6 +158,9 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.choose_ir)
     SwitchButton choose_ir;
+
+    @BindView(R.id.statusIr)
+    TextView statusIr;
 
     private int max, current;
 
@@ -227,8 +245,18 @@ public class MainActivity extends AppCompatActivity {
 
         ButterKnife.bind(this);
 
+
+        if (ir.haveEmitter()){
+            statusIr.setText("Mode : IR Internal");
+        }else{
+            if (!isConnected){
+                statusIr.setText("Tidak terdapat IR Internal ataupun External");
+            }else{
+                statusIr.setText("Mode : IR External");
+            }
+        }
         initDataShared();
-        initPermission();
+//        initPermission();
     }
     private void initDataShared(){
         JamOn.setData(getListJam());
@@ -445,7 +473,7 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.show();
     }
     private void initPutarLayar(){
-        doPutarLayar(2);
+//        doPutarLayar(2);
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -455,16 +483,16 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
     private void doPutarLayar(int code){
-        boolean retVal = false;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            retVal = Settings.System.canWrite(this);
-            if (retVal){
-//                Handler handler = new Handler();
-                mHandler.post(() -> Settings.System.putInt(getContentResolver(), Settings.System.USER_ROTATION, code));
-            }
-        }else{
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
-        }
+//        boolean retVal = false;
+//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+//            retVal = Settings.System.canWrite(this);
+//            if (retVal){
+////                Handler handler = new Handler();
+//                mHandler.post(() -> Settings.System.putInt(getContentResolver(), Settings.System.USER_ROTATION, code));
+//            }
+//        }else{
+//            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+//        }
 
     }
 

@@ -6,7 +6,7 @@ android {
         config {
             keyAlias 'keyrelease'
             keyPassword 'nollimakali'
-            storeFile file('/home/mhandharbeni/Documents/PROJECT/ANDROID/LiTronRemote/keystore.jks')
+            storeFile file('/home/mhandharbeni/Documents/PROJECT/LiTronRemote/keystore.jks')
             storePassword 'nollimakali'
         }
     }
@@ -15,8 +15,8 @@ android {
         applicationId "com.litron.litronremote"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 7
-        versionName "2.1"
+        versionCode 8
+        versionName "2.2"
         vectorDrawables.useSupportLibrary = true
         signingConfig signingConfigs.config
     }
