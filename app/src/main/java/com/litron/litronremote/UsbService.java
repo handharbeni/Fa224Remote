@@ -238,8 +238,8 @@ public class UsbService extends Service {
                     serialPortConnected = true;
                     serialPort.setBaudRate(BAUD_RATE);
                     serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
-                    serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
-                    serialPort.setParity(UsbSerialInterface.PARITY_NONE);
+                    serialPort.setStopBits(UsbSerialInterface.STOP_BITS_2);
+                    serialPort.setParity(UsbSerialInterface.PARITY_EVEN);
                     /**
                      * Current flow control Options:
                      * UsbSerialInterface.FLOW_CONTROL_OFF

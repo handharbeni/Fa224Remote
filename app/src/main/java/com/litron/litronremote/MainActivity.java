@@ -334,11 +334,9 @@ public class MainActivity extends AppCompatActivity {
                     (byte) a[7],
                     (byte) a[8]
             });
-            if (isConnected) { // if UsbService was correctly binded, Send data
-//                mHandler.post(() -> {
+            if (isConnected) {
                 usbService.changeBaudRate(230400);
                 usbService.write(newData);
-//                });
             }else{
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     ir.sendCode(a);
@@ -357,10 +355,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static byte DATA_HIGH = (byte) 85;
+    public static byte DATA_HIGH = (byte) 219;
     public static byte DATA_LOW = (byte) 158;
-    public static int PANJANG_BIT = 73;
-    public static int LENGTH_DATA = PANJANG_BIT * 9;
+    public static int PANJANG_BIT = 62;
+    public static int LENGTH_DATA = PANJANG_BIT * 12;
 
     public byte[] getData(byte[] bytes){
         byte[] output = new byte[(LENGTH_DATA)*18];
