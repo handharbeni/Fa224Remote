@@ -16,7 +16,8 @@ android {
         minSdkVersion 15
         targetSdkVersion 28
         versionCode 9
-        versionName "2.3"
+        versionName "2.3-(hi-219-low-248-panjang-128-baudrate-460800-lebardata*2)"
+        archivesBaseName = "Litron(FA-224)-version_${versionName}-build_${versionCode}"
         vectorDrawables.useSupportLibrary = true
         signingConfig signingConfigs.config
     }

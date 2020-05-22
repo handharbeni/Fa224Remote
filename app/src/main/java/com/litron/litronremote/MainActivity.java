@@ -44,6 +44,7 @@ import com.google.android.gms.ads.MobileAds;
 import com.google.android.things.pio.PeripheralManager;
 import com.suke.widget.SwitchButton;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -65,9 +66,6 @@ import me.weyye.hipermission.PermissionItem;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 
 public class MainActivity extends AppCompatActivity {
-
-
-
     private boolean isConnected = false;
     /*
      * Notifications from UsbService will be received here.
@@ -79,21 +77,16 @@ public class MainActivity extends AppCompatActivity {
                 case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
                     isConnected = true;
                     initPutarLayar();
-//                    Toast.makeText(context, "OTG Siap", Toast.LENGTH_SHORT).show();
-//                    statusIr.setText("OTG Siap");
                     statusIr.setText("Mode : IR OTG");
-//                    usbService.changeBaudRate(230400);
                     break;
                 case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
                     isConnected = false;
                     doPutarLayar(0);
-//                    Toast.makeText(context, "Tidak bisa mendapatkan ijin untuk OTG", Toast.LENGTH_SHORT).show();
                     statusIr.setText("Tidak bisa mendapatkan ijin untuk OTG");
                     break;
                 case UsbService.ACTION_NO_USB: // NO USB CONNECTED
                     isConnected = false;
                     doPutarLayar(0);
-//                    Toast.makeText(context, "Tidak Ada OTG yang terpasang. jika sudah terpasang, Coba lepas lalu pasang kembali", Toast.LENGTH_SHORT).show();
                     if (ir.haveEmitter()){
                         statusIr.setText("Mode : IR Internal");
                     }else{
@@ -103,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
                 case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
                     isConnected = false;
                     doPutarLayar(0);
-//                    Toast.makeText(context, "OTG Terlepas", Toast.LENGTH_SHORT).show();
                     statusIr.setText("OTG Terlepas");
                     if (ir.haveEmitter()){
                         statusIr.setText("Mode : IR Internal");
@@ -114,7 +106,6 @@ public class MainActivity extends AppCompatActivity {
                 case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
                     isConnected = false;
                     doPutarLayar(0);
-//                    Toast.makeText(context, "OTG tidak mendukung", Toast.LENGTH_SHORT).show();
                     statusIr.setText("OTG Tidak Mendukung");
                     break;
             }
@@ -241,10 +232,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.second_layout);
         mHandler = new MyHandler(this);
 
-
-
         ButterKnife.bind(this);
-
 
         if (ir.haveEmitter()){
             statusIr.setText("Mode : IR Internal");
@@ -323,20 +311,40 @@ public class MainActivity extends AppCompatActivity {
                 count++;
             }
             a[8] = ~sum;
-            byte[] newData = getData(new byte[]{
+            byte[] newData;
+            byte[] newData2;
+            newData = getData(new byte[]{
                     (byte) a[0],
                     (byte) a[1],
                     (byte) a[2],
                     (byte) a[3],
-                    (byte) a[4],
+                    (byte) a[4]
+            });
+            newData2 = getData(new byte[]{
                     (byte) a[5],
                     (byte) a[6],
                     (byte) a[7],
                     (byte) a[8]
             });
+
+//            for (int newA : a){
+//                Log.d(TAG, "doInBackground: A "+String.valueOf(newA));
+//            }
+//            Log.d(TAG, "doInBackground: count byte "+String.valueOf(newData.length));
+//            for (byte newByte : newData){
+//                Log.d(TAG, "doInBackground: byte "+String.valueOf(newByte));
+//            }
+
             if (isConnected) {
-                usbService.changeBaudRate(230400);
+                usbService.changeBaudRate(460800);
                 usbService.write(newData);
+                usbService.write(newData2);
+//                try {
+//                    usbService.write(newData, 1, 1);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+
             }else{
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     ir.sendCode(a);
@@ -356,12 +364,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static byte DATA_HIGH = (byte) 219;
-    public static byte DATA_LOW = (byte) 158;
-    public static int PANJANG_BIT = 62;
-    public static int LENGTH_DATA = PANJANG_BIT * 12;
+    public static byte DATA_LOW = (byte) 248;
+    public static int PANJANG_BIT = 125;
+    public static int LENGTH_DATA = PANJANG_BIT * 9;
 
     public byte[] getData(byte[] bytes){
-        byte[] output = new byte[(LENGTH_DATA)*18];
+        byte[] output = new byte[((LENGTH_DATA)*10)];
+        Arrays.fill(output, DATA_HIGH);
         int i=0;
         int j=0;
         for (byte b : bytes){

@@ -147,6 +147,14 @@ public class UsbService extends Service {
     }
 
     /*
+     * This function will be called from MainActivity to write data through Serial Port
+     */
+    public void write(byte[] data, int offset, int len) throws IOException {
+        if (serialOutputStream != null)
+            serialOutputStream.write(data, offset, len);
+    }
+
+    /*
      * This function will be called from MainActivity to change baud rate
      */
 
