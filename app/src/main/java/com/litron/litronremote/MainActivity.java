@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.hardware.usb.UsbDevice;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -37,6 +38,8 @@ import android.widget.Toast;
 
 import com.aigestudio.wheelpicker.WheelPicker;
 import com.crashlytics.android.Crashlytics;
+import com.felhr.deviceids.CH34xIds;
+import com.felhr.usbserial.UsbSerialInterface;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -157,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    int[] a = new int[9];
+    static int[] a = new int[9];
 
     private static String S_WAKTU_ON = "WaktuON";
     private static String S_WAKTU_OFF = "WaktuOFF";
@@ -313,19 +316,25 @@ public class MainActivity extends AppCompatActivity {
             a[8] = ~sum;
             byte[] newData;
             byte[] newData2;
-            newData = getData(new byte[]{
-                    (byte) a[0],
-                    (byte) a[1],
-                    (byte) a[2],
-                    (byte) a[3],
-                    (byte) a[4]
-            });
-            newData2 = getData(new byte[]{
-                    (byte) a[5],
-                    (byte) a[6],
-                    (byte) a[7],
-                    (byte) a[8]
-            });
+
+            byte[] ch34Data;
+            byte[] ch34Data2;
+
+
+//
+//            ch34Data = getData(new byte[]{
+//                    (byte) a[0],
+//                    (byte) a[1],
+//                    (byte) a[2],
+//                    (byte) a[3],
+//                    (byte) a[4]
+//            }, false);
+//            ch34Data2 = getData(new byte[]{
+//                    (byte) a[5],
+//                    (byte) a[6],
+//                    (byte) a[7],
+//                    (byte) a[8]
+//            }, false);
 
 //            for (int newA : a){
 //                Log.d(TAG, "doInBackground: A "+String.valueOf(newA));
@@ -336,9 +345,37 @@ public class MainActivity extends AppCompatActivity {
 //            }
 
             if (isConnected) {
-                usbService.changeBaudRate(460800);
-                usbService.write(newData);
-                usbService.write(newData2);
+                UsbDevice device = usbService.getDevice();
+
+                int deviceVID = device.getVendorId();
+                int devicePID = device.getProductId();
+                boolean isHoltek = !CH34xIds.isDeviceSupported(deviceVID, devicePID);
+//                usbService.getConnection().controlTransfer(0x40, 0x04, 0x0228, 0, null, 0, 0);
+//                usbService.getSerialPort().syncOpen();
+                usbService.changeStopBit(UsbSerialInterface.STOP_BITS_2);
+                usbService.changeDataBit(UsbSerialInterface.DATA_BITS_8);
+                usbService.changeParity(UsbSerialInterface.PARITY_EVEN);
+//                usbService.changeBaudRate(460800);
+//                usbService.getSerialPort().syncClose();
+//                usbService.changeBaudRate(256000);
+                newData = getData(new byte[]{
+                        (byte) 55,
+                        (byte) 55,
+                        (byte) 55,
+                        (byte) 55,
+                        (byte) 55
+                }, true);
+                newData2 = getData(new byte[]{
+                        (byte) 55,
+                        (byte) 55,
+                        (byte) 55,
+                        (byte) 55
+                }, true);
+
+                usbService.write(new byte[]{0x55});
+//                usbService.write(newData2);
+
+
 //                try {
 //                    usbService.write(newData, 1, 1);
 //                } catch (IOException e) {
@@ -366,7 +403,14 @@ public class MainActivity extends AppCompatActivity {
     public static byte DATA_HIGH = (byte) 219;
     public static byte DATA_LOW = (byte) 248;
     public static int PANJANG_BIT = 125;
-    public static int LENGTH_DATA = PANJANG_BIT * 9;
+    public static int LENGTH_DATA = PANJANG_BIT * a.length;
+
+    public byte[] getData(byte[] bytes, boolean isHoltek){
+//        DATA_LOW = isHoltek?DATA_LOW:(byte)240;
+        PANJANG_BIT = isHoltek?125:140;
+        LENGTH_DATA = PANJANG_BIT * a.length;
+        return getData(bytes);
+    }
 
     public byte[] getData(byte[] bytes){
         byte[] output = new byte[((LENGTH_DATA)*10)];
@@ -421,8 +465,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public boolean[] getBinary(int input){
-        boolean[] bits = new boolean[8];
-        for (int i = 7; i >= 0; i--) {
+        boolean[] bits = new boolean[9];
+        for (int i = 8; i >= 0; i--) {
             bits[i] = (input & (1 << i)) != 0;
         }
         return bits;

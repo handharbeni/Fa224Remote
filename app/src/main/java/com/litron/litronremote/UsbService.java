@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.usb.UsbConfiguration;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
@@ -14,17 +15,18 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.felhr.usbserial.CDCSerialDevice;
-import com.felhr.usbserial.SerialInputStream;
-import com.felhr.usbserial.SerialOutputStream;
-import com.felhr.usbserial.UsbSerialDevice;
-import com.felhr.usbserial.UsbSerialInterface;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import dev.mhandharbeni.usbserial.usbserial.CDCSerialDevice;
+import dev.mhandharbeni.usbserial.usbserial.CH34xSerialDevice;
+import dev.mhandharbeni.usbserial.usbserial.SerialInputStream;
+import dev.mhandharbeni.usbserial.usbserial.SerialOutputStream;
+import dev.mhandharbeni.usbserial.usbserial.UsbSerialDevice;
+import dev.mhandharbeni.usbserial.usbserial.UsbSerialInterface;
 
 public class UsbService extends Service {
 
@@ -45,7 +47,7 @@ public class UsbService extends Service {
     public static final int DSR_CHANGE = 2;
     public static final int SYNC_READ = 3;
     private static final String ACTION_USB_PERMISSION = "com.litron.litronremote.USB_PERMISSION";
-    private static final int BAUD_RATE = 9600; // BaudRate. Change this value if you need
+    private static final int BAUD_RATE = 460800; // BaudRate. Change this value if you need
     public static boolean SERVICE_CONNECTED = false;
 
     private IBinder binder = new UsbBinder();
@@ -163,6 +165,21 @@ public class UsbService extends Service {
             serialPort.setBaudRate(baudRate);
     }
 
+    public void changeStopBit(int stopBit){
+        if (serialPort != null)
+            serialPort.setStopBits(stopBit);
+    }
+
+    public void changeDataBit(int dataBit){
+        if (serialPort != null)
+            serialPort.setDataBits(dataBit);
+    }
+
+    public void changeParity(int parity){
+        if (serialPort != null)
+            serialPort.setParity(parity);
+    }
+
     public void setHandler(Handler mHandler) {
         this.mHandler = mHandler;
     }
@@ -186,7 +203,6 @@ public class UsbService extends Service {
                 device = entry.getValue();
                 int deviceVID = device.getVendorId();
                 int devicePID = device.getProductId();
-
 //                if (deviceVID != 0x1d6b && (devicePID != 0x0001 && devicePID != 0x0002 && devicePID != 0x0003)) {
                 if (UsbSerialDevice.isSupported(device)) {
                     // There is a device connected to our Android device. Try to open it as a Serial Port.
@@ -208,6 +224,10 @@ public class UsbService extends Service {
             Intent intent = new Intent(ACTION_NO_USB);
             sendBroadcast(intent);
         }
+    }
+
+    UsbDevice getDevice(){
+        return device;
     }
 
     private void setFilter() {
@@ -233,6 +253,10 @@ public class UsbService extends Service {
         }
     }
 
+    public UsbDeviceConnection getConnection(){
+        return connection;
+    }
+
     /*
      * A simple thread to open a serial port.
      * Although it should be a fast operation. moving usb operations away from UI thread is a good thing.
@@ -241,13 +265,42 @@ public class UsbService extends Service {
         @Override
         public void run() {
             serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
+//            CH34xSerialDevice.
+//            boolean ch34Device = CH34xIds.isDeviceSupported(device.getDeviceId(), device.getProductId());
+//            CH34xUARTDriver ch340Devices = new CH34xUARTDriver(usbManager, context, ACTION_USB_PERMISSION);
+//            ch340Devices.mDeviceConnection = connection;
+//            ch340Devices.
+//            ch340Devices.SetConfig(BAUD_RATE,(byte) 2,(byte)8,(byte)2,(byte)0);
+//            ch340Devices.UartInit();
+//            device = ch340Devices.EnumerateDevice();
+
+//            serialPort = UsbSerialDevice.createUsbSerialDevice(device, ch340Devices.mDeviceConnection);
+//            if (ch34Device) {
+//                Log.d(TAG, "run: isCh340 Devices");
+//                device = new CH34xUARTDriver(usbManager, context, ACTION_USB_PERMISSION).EnumerateDevice();
+//
+//                serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
+//            }
+
             if (serialPort != null) {
                 if (serialPort.syncOpen()) {
+
                     serialPortConnected = true;
+//                    serialPort.setBreak(true);
                     serialPort.setBaudRate(BAUD_RATE);
                     serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
+                    serialPort.setParity(UsbSerialDevice.PARITY_EVEN);
                     serialPort.setStopBits(UsbSerialInterface.STOP_BITS_2);
-                    serialPort.setParity(UsbSerialInterface.PARITY_EVEN);
+
+                    try {
+                        serialPort.setParameters(
+                                BAUD_RATE,
+                                UsbSerialInterface.DATA_BITS_8,
+                                UsbSerialInterface.STOP_BITS_2,
+                                UsbSerialInterface.PARITY_EVEN
+                        );
+                        Log.d(TAG, "run: success");
+                    } catch (IOException e) { }
                     /**
                      * Current flow control Options:
                      * UsbSerialInterface.FLOW_CONTROL_OFF
@@ -290,6 +343,10 @@ public class UsbService extends Service {
                 context.sendBroadcast(intent);
             }
         }
+    }
+
+    public UsbSerialDevice getSerialPort(){
+        return serialPort;
     }
 
     private static String toASCII(int value) {
