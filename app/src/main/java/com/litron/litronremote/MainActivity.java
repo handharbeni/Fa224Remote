@@ -38,8 +38,6 @@ import android.widget.Toast;
 
 import com.aigestudio.wheelpicker.WheelPicker;
 import com.crashlytics.android.Crashlytics;
-import com.felhr.deviceids.CH34xIds;
-import com.felhr.usbserial.UsbSerialInterface;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -61,6 +59,8 @@ import java.util.Set;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import dev.mhandharbeni.usbserial.deviceids.CH34xIds;
+import dev.mhandharbeni.usbserial.usbserial.UsbSerialInterface;
 import io.fabric.sdk.android.Fabric;
 import me.weyye.hipermission.HiPermission;
 import me.weyye.hipermission.PermissionCallback;
@@ -352,28 +352,36 @@ public class MainActivity extends AppCompatActivity {
                 boolean isHoltek = !CH34xIds.isDeviceSupported(deviceVID, devicePID);
 //                usbService.getConnection().controlTransfer(0x40, 0x04, 0x0228, 0, null, 0, 0);
 //                usbService.getSerialPort().syncOpen();
-                usbService.changeStopBit(UsbSerialInterface.STOP_BITS_2);
-                usbService.changeDataBit(UsbSerialInterface.DATA_BITS_8);
-                usbService.changeParity(UsbSerialInterface.PARITY_EVEN);
+//                usbService.changeStopBit(UsbSerialInterface.STOP_BITS_2);
+//                usbService.changeDataBit(UsbSerialInterface.DATA_BITS_8);
+//                usbService.changeParity(UsbSerialInterface.PARITY_EVEN);
 //                usbService.changeBaudRate(460800);
 //                usbService.getSerialPort().syncClose();
 //                usbService.changeBaudRate(256000);
+                try {
+                    usbService.getSerialPort().setParameters(
+                            460800,
+                            UsbSerialInterface.DATA_BITS_8,
+                            UsbSerialInterface.STOP_BITS_2,
+                            UsbSerialInterface.PARITY_EVEN
+                    );
+                } catch (IOException e) { }
                 newData = getData(new byte[]{
-                        (byte) 55,
-                        (byte) 55,
-                        (byte) 55,
-                        (byte) 55,
-                        (byte) 55
+                        (byte) a[0],
+                        (byte) a[1],
+                        (byte) a[2],
+                        (byte) a[3],
+                        (byte) a[4]
                 }, true);
                 newData2 = getData(new byte[]{
-                        (byte) 55,
-                        (byte) 55,
-                        (byte) 55,
-                        (byte) 55
+                        (byte) a[5],
+                        (byte) a[6],
+                        (byte) a[7],
+                        (byte) a[8]
                 }, true);
 
-                usbService.write(new byte[]{0x55});
-//                usbService.write(newData2);
+                usbService.write(newData);
+                usbService.write(newData2);
 
 
 //                try {
