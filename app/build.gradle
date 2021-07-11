@@ -6,7 +6,7 @@ android {
         config {
             keyAlias 'keyrelease'
             keyPassword 'nollimakali86'
-            storeFile file('/home/mhandharbeni/Documents/PROJECT/LiTronRemote/keystore.jks')
+            storeFile file('keystore.jks')
             storePassword 'nollimakali86'
         }
     }
@@ -14,7 +14,7 @@ android {
     defaultConfig {
         applicationId "com.litron.litronremote"
         minSdkVersion 15
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 11
         versionName "3.0"
         archivesBaseName = "Litron(FA-224)-version_${versionName}-build_${versionCode}"
