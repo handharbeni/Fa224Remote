@@ -30,7 +30,7 @@
                 android:text="Jam"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
-            <com.aigestudio.wheelpicker.WheelPicker
+            <io.github.handharbeni.wheelview_module.WheelPicker
                 app:wheel_item_text_size="25sp"
                 app:wheel_cyclic="false"
                 app:wheel_atmospheric="true"
@@ -67,7 +67,7 @@
                 <!--android:id="@+id/MenitOff"-->
                 <!--android:layout_width="match_parent"-->
                 <!--android:layout_height="wrap_content"/>-->
-            <com.aigestudio.wheelpicker.WheelPicker
+            <io.github.handharbeni.wheelview_module.WheelPicker
                 app:wheel_item_text_size="25sp"
                 app:wheel_cyclic="false"
                 app:wheel_atmospheric="true"

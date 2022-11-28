@@ -36,12 +36,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.aigestudio.wheelpicker.WheelPicker;
-import com.crashlytics.android.Crashlytics;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.MobileAds;
 import com.google.android.things.pio.PeripheralManager;
 import com.suke.widget.SwitchButton;
 
@@ -61,10 +55,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import dev.mhandharbeni.usbserial.deviceids.CH34xIds;
 import dev.mhandharbeni.usbserial.usbserial.UsbSerialInterface;
-import io.fabric.sdk.android.Fabric;
-import me.weyye.hipermission.HiPermission;
-import me.weyye.hipermission.PermissionCallback;
-import me.weyye.hipermission.PermissionItem;
+import io.github.handharbeni.wheelview_module.WheelPicker;
 
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 
@@ -116,11 +107,6 @@ public class MainActivity extends AppCompatActivity {
     };
     private UsbService usbService;
     private MyHandler mHandler;
-
-    private static String ADS_APP_ID = "ca-app-pub-6979523679704477~8016474368";
-    private static String ADS_UNIT_ID = "ca-app-pub-6979523679704477/1079353317";
-
-    private AdView mAdView;
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private IrController ir;
@@ -224,7 +210,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Fabric.with(this, new Crashlytics());
 
         sharedPreferences = getSharedPreferences("LITRONRemote", Context.MODE_PRIVATE);
         audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
@@ -320,44 +305,13 @@ public class MainActivity extends AppCompatActivity {
             byte[] ch34Data;
             byte[] ch34Data2;
 
-
-//
-//            ch34Data = getData(new byte[]{
-//                    (byte) a[0],
-//                    (byte) a[1],
-//                    (byte) a[2],
-//                    (byte) a[3],
-//                    (byte) a[4]
-//            }, false);
-//            ch34Data2 = getData(new byte[]{
-//                    (byte) a[5],
-//                    (byte) a[6],
-//                    (byte) a[7],
-//                    (byte) a[8]
-//            }, false);
-
-//            for (int newA : a){
-//                Log.d(TAG, "doInBackground: A "+String.valueOf(newA));
-//            }
-//            Log.d(TAG, "doInBackground: count byte "+String.valueOf(newData.length));
-//            for (byte newByte : newData){
-//                Log.d(TAG, "doInBackground: byte "+String.valueOf(newByte));
-//            }
-
             if (isConnected) {
                 UsbDevice device = usbService.getDevice();
 
                 int deviceVID = device.getVendorId();
                 int devicePID = device.getProductId();
                 boolean isHoltek = !CH34xIds.isDeviceSupported(deviceVID, devicePID);
-//                usbService.getConnection().controlTransfer(0x40, 0x04, 0x0228, 0, null, 0, 0);
-//                usbService.getSerialPort().syncOpen();
-//                usbService.changeStopBit(UsbSerialInterface.STOP_BITS_2);
-//                usbService.changeDataBit(UsbSerialInterface.DATA_BITS_8);
-//                usbService.changeParity(UsbSerialInterface.PARITY_EVEN);
-//                usbService.changeBaudRate(460800);
-//                usbService.getSerialPort().syncClose();
-//                usbService.changeBaudRate(256000);
+
                 try {
                     usbService.getSerialPort().setParameters(
                             460800,
@@ -371,9 +325,7 @@ public class MainActivity extends AppCompatActivity {
                         (byte) a[1],
                         (byte) a[2],
                         (byte) a[3],
-                        (byte) a[4]
-                }, true);
-                newData2 = getData(new byte[]{
+                        (byte) a[4],
                         (byte) a[5],
                         (byte) a[6],
                         (byte) a[7],
@@ -381,15 +333,6 @@ public class MainActivity extends AppCompatActivity {
                 }, true);
 
                 usbService.write(newData);
-                usbService.write(newData2);
-
-
-//                try {
-//                    usbService.write(newData, 1, 1);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-
             }else{
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     ir.sendCode(a);
@@ -414,7 +357,6 @@ public class MainActivity extends AppCompatActivity {
     public static int LENGTH_DATA = PANJANG_BIT * a.length;
 
     public byte[] getData(byte[] bytes, boolean isHoltek){
-//        DATA_LOW = isHoltek?DATA_LOW:(byte)240;
         PANJANG_BIT = isHoltek?125:140;
         LENGTH_DATA = PANJANG_BIT * a.length;
         return getData(bytes);
