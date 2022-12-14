@@ -1,17 +1,14 @@
 package com.litron.litronremote;
 
+import android.app.Activity;
 import android.content.Context;
 import android.hardware.ConsumerIrManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 import android.widget.Toast;
-
-import com.crashlytics.android.Crashlytics;
-
-import io.fabric.sdk.android.Fabric;
 
 public class IrController {
 
@@ -20,12 +17,12 @@ public class IrController {
     private AudioTrack irAudioTrack = null;
     private static final int SAMPLERATE = 48000;
 
+    private Activity activity;
     private Context mContext;
 
 
-    IrController(Context context) {
-        Fabric.with(context, new Crashlytics());
-
+    IrController(Activity activity, Context context) {
+        this.activity = activity;
         mContext = context;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             irService = (ConsumerIrManager) context.getSystemService(Context.CONSUMER_IR_SERVICE);
@@ -53,19 +50,22 @@ public class IrController {
                         codeTransmit[is] = 1;
                         is++;
                         codeTransmit[is] = 3333;
-                        is++;
                     }else{
                         codeTransmit[is] = 3333;
                         is++;
                         codeTransmit[is] = 1;
-                        is++;
                     }
+                    is++;
                     i = (byte) (i >> (byte)1);
                 }
                 irService.transmit(38000, codeTransmit);
             }
         }else{
-            Toast.makeText(mContext, "Tidak terdapat Infrared dalam device anda", Toast.LENGTH_SHORT).show();
+            activity.runOnUiThread(new Runnable() {
+                public void run() {
+                    Toast.makeText(mContext, "Tidak terdapat Infrared dalam device anda", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 

@@ -1,6 +1,5 @@
 package com.litron.litronremote;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -10,11 +9,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.hardware.usb.UsbDevice;
-import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioTrack;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -22,28 +18,23 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.PersistableBundle;
 import android.provider.Settings;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.AppCompatButton;
-import android.util.Log;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
+
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.CheckBox;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.things.pio.PeripheralManager;
 import com.suke.widget.SwitchButton;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -56,8 +47,6 @@ import butterknife.OnClick;
 import dev.mhandharbeni.usbserial.deviceids.CH34xIds;
 import dev.mhandharbeni.usbserial.usbserial.UsbSerialInterface;
 import io.github.handharbeni.wheelview_module.WheelPicker;
-
-import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
 
 public class MainActivity extends AppCompatActivity {
     private boolean isConnected = false;
@@ -215,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
         audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
 
 
-        ir = new IrController(this);
+        ir = new IrController(this, this);
 
         setContentView(R.layout.second_layout);
         mHandler = new MyHandler(this);
