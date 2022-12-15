@@ -309,19 +309,35 @@ public class MainActivity extends AppCompatActivity {
                             UsbSerialInterface.PARITY_EVEN
                     );
                 } catch (IOException e) { }
+
                 newData = getData(new byte[]{
                         (byte) a[0],
                         (byte) a[1],
                         (byte) a[2],
                         (byte) a[3],
-                        (byte) a[4],
+                        (byte) a[4]
+                }, true);
+                newData2 = getData(new byte[]{
                         (byte) a[5],
                         (byte) a[6],
                         (byte) a[7],
                         (byte) a[8]
                 }, true);
 
+//                newData = getData(new byte[]{
+//                        (byte) a[0],
+//                        (byte) a[1],
+//                        (byte) a[2],
+//                        (byte) a[3],
+//                        (byte) a[4],
+//                        (byte) a[5],
+//                        (byte) a[6],
+//                        (byte) a[7],
+//                        (byte) a[8]
+//                }, true);
+
                 usbService.write(newData);
+                usbService.write(newData2);
             }else{
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     ir.sendCode(a);
