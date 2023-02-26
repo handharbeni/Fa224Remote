@@ -100,34 +100,41 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private IrController ir;
 
-    private static String LABEL_SEPARATOR = ":";
+    private static final String LABEL_SEPARATOR = ":";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
 
     private AlertDialog alertDialog;
     private AlertDialog.Builder builder;
-    private static String LabelPutarLayar = "PUTAR_LAYAR";
+    private static final String LabelPutarLayar = "PUTAR_LAYAR";
 
 
+    @SuppressLint("NonConstantResourceId")
     @BindView(R.id.btnKirim)
     AppCompatButton btnKirim;
 
+    @SuppressLint("NonConstantResourceId")
     @BindView(R.id.JamOn)
     WheelPicker JamOn;
 
+    @SuppressLint("NonConstantResourceId")
     @BindView(R.id.JamOff)
     WheelPicker JamOff;
 
+    @SuppressLint("NonConstantResourceId")
     @BindView(R.id.MenitOn)
     WheelPicker MenitOn;
 
+    @SuppressLint("NonConstantResourceId")
     @BindView(R.id.MenitOff)
     WheelPicker MenitOff;
 
+    @SuppressLint("NonConstantResourceId")
     @BindView(R.id.choose_ir)
     SwitchButton choose_ir;
 
+    @SuppressLint("NonConstantResourceId")
     @BindView(R.id.statusIr)
     TextView statusIr;
 
@@ -137,17 +144,19 @@ public class MainActivity extends AppCompatActivity {
 
     static int[] a = new int[9];
 
-    private static String S_WAKTU_ON = "WaktuON";
-    private static String S_WAKTU_OFF = "WaktuOFF";
-    private static String S_SWITCH_BUTTON = "SwitchBUTTON";
+    private static final String S_WAKTU_ON = "WaktuON";
+    private static final String S_WAKTU_OFF = "WaktuOFF";
+    private static final String S_SWITCH_BUTTON = "SwitchBUTTON";
 
     private AudioManager audioManager;
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
-            usbService = ((UsbService.UsbBinder) arg1).getService();
-            usbService.setHandler(mHandler);
+            try {
+                usbService = ((UsbService.UsbBinder) arg1).getService();
+                usbService.setHandler(mHandler);
+            } catch (Exception ignored) {}
         }
 
         @Override
@@ -240,6 +249,7 @@ public class MainActivity extends AppCompatActivity {
 
         choose_ir.setOnCheckedChangeListener((view, isChecked) -> setsSwitchButton(isChecked));
     }
+    @SuppressLint("NonConstantResourceId")
     @OnClick(R.id.btnKirim)
     public void kirimData(){
         Date currentTime = Calendar.getInstance().getTime();
@@ -342,7 +352,12 @@ public class MainActivity extends AppCompatActivity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     ir.sendCode(a);
                 }else{
-                    Toast.makeText(getApplicationContext(), "Not Support Operating System, Please Using OTG", Toast.LENGTH_SHORT).show();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(), "Not Support Operating System, Please Using OTG", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }
             return true;
@@ -551,7 +566,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if (isConnected) {
-            Toast.makeText(this, "Lepas OTG Lebih Dahulu", Toast.LENGTH_SHORT).show();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, "Lepas OTG Lebih Dahulu", Toast.LENGTH_SHORT).show();
+                }
+            });
         }else{
             super.onBackPressed();
             return;
@@ -594,7 +614,11 @@ public class MainActivity extends AppCompatActivity {
                     startService.putExtra(key, extra);
                 }
             }
-            startService(startService);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(startService);
+            } else {
+                startService(startService);
+            }
         }
         Intent bindingIntent = new Intent(this, service);
         bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
