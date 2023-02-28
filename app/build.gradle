@@ -16,8 +16,8 @@ android {
         applicationId "com.litron.litronremote"
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 12
-        versionName "3.1"
+        versionCode 13
+        versionName "3.2"
         archivesBaseName = "Litron(FA-224)-version_${versionName}-build_${versionCode}"
         vectorDrawables.useSupportLibrary = true
         signingConfig signingConfigs.config
