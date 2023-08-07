@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
@@ -14,9 +15,9 @@ android {
     defaultConfig {
         applicationId "com.litron.litronremote"
         minSdkVersion 21
-        targetSdkVersion 29
-        versionCode 11
-        versionName "3.0"
+        targetSdkVersion 31
+        versionCode 13
+        versionName "3.2"
         archivesBaseName = "Litron(FA-224)-version_${versionName}-build_${versionCode}"
         vectorDrawables.useSupportLibrary = true
         signingConfig signingConfigs.config
